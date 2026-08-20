@@ -6,16 +6,15 @@ import (
 	"net/http"
 
 	"github.com/eunice99x/goMicro/db"
-	"github.com/eunice99x/goMicro/internal/api"
+	"github.com/eunice99x/goMicro/internal/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func main (){
-	
-	r := chi.NewRouter()
-    r.Use(middleware.Logger)
+func main() {
 
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
 	db, err := db.NewDatabase()
 	if err != nil {
@@ -25,9 +24,9 @@ func main (){
 
 	log.Printf("successfully connected to database")
 
-	store := api.NewPostgresStorer(db.GetDB())
+	store := repository.NewPostgresStorer(db.GetDB())
 
 	fmt.Print(store)
-	
-    http.ListenAndServe(":3000", r)
+
+	http.ListenAndServe(":3000", r)
 }
