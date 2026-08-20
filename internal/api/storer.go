@@ -26,7 +26,7 @@ func (ps *PostgresStorer) CreateProduct(ctx context.Context, p *model.Product) (
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return nil, fmt.Errorf("error getting last id: %w", id)
+		return nil, fmt.Errorf("error getting last id: %v", id)
 	}
 	p.ID = id
 
@@ -63,8 +63,7 @@ func (ps *PostgresStorer) UpdateProduct(ctx context.Context, p *model.Product) (
 }
 
 func (ps *PostgresStorer) DeleteProduct(ctx context.Context, id int64) (error) {
-	var p *model.Product
-	err := ps.db.GetContext(ctx, &p, "DELETE FROM products WHERE id=?", id)
+	_, err := ps.db.ExecContext(ctx, "DELETE FROM products WHERE id=?", id)
 	if err != nil {
 		return fmt.Errorf("failed to delete product: %w", err)
 	}
