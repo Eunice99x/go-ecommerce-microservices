@@ -52,9 +52,14 @@ func TestCreateOrder(t *testing.T) {
 
 				s.ExpectBegin()
 
-				s.ExpectExec("INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES (?, ?, ?, ?)").WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnResult(sqlmock.NewResult(1, 1))
+				oRows := sqlmock.NewRows([]string{"id"}).
+					AddRow(1)
+				oiRows := sqlmock.NewRows([]string{"id"}).
+					AddRow(1)
 
-				s.ExpectExec("INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES (?, ?, ?, ?, ?, ?)").WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnResult(sqlmock.NewResult(1, 1))
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
+
+				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnRows(oiRows)
 
 				s.ExpectCommit()
 

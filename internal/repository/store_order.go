@@ -16,15 +16,15 @@ func (ps *PostgresStorer) CreateOrder(ctx context.Context, o *model.Order) (*mod
 			return fmt.Errorf("error creating order: %w", err)
 		}
 
-		for _, oi := range o.Items {
-			oi.OrderID = order.ID
+		for i := range o.Items {
+			o.Items[i].OrderID = order.ID
 
-			err = createOrderItem(ctx, tx, &oi)
+			err = createOrderItem(ctx, tx, &o.Items[i])
 			if err != nil {
 				return fmt.Errorf("error creating order item: %w", err)
 			}
 		}
-		
+
 		return nil
 	})
 
@@ -36,44 +36,37 @@ func (ps *PostgresStorer) CreateOrder(ctx context.Context, o *model.Order) (*mod
 }
 
 func createOrder(ctx context.Context, tx *sqlx.Tx, o *model.Order) (*model.Order, error) {
-	res, err := tx.NamedExecContext(ctx, "INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES (:payment_method, :tax_price, :shipping_price, :total_price)", o)
+	query := `INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id`
+
+	err := tx.GetContext(ctx, &o.ID, query, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice)
 	if err != nil {
 		return nil, fmt.Errorf("error inserting order: %w", err)
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("error getting last insert ID: %w", err)
-	}
-	o.ID = id
-
 	return o, nil
 }
 
-func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi *model.OrderItem) (error) {
-	res, err := tx.NamedExecContext(ctx, "INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES (:name, :quantity, :image, :price, :product_id, :order_id)", oi)
+func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi *model.OrderItem) error {
+
+	query := `INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+
+	err := tx.GetContext(ctx, &oi.ID, query, oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID)
 	if err != nil {
 		return fmt.Errorf("error inserting order item: %w", err)
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("error getting last insert ID: %w", err)
-	}
-	oi.ID = id
-
-	return  nil
+	return nil
 }
 
 func (ps *PostgresStorer) GetOrder(ctx context.Context, id int64) (*model.Order, error) {
 	var o model.Order
-	err := ps.db.GetContext(ctx, &o, "SELECT * FROM orders WHERE id=?", id)
+	err := ps.db.GetContext(ctx, &o, "SELECT * FROM orders WHERE id=$1", id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting order: %w", err)
 	}
 
 	var items []model.OrderItem
-	err = ps.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=?", id)
+	err = ps.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=$1", id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting order items: %w", err)
 	}
@@ -88,10 +81,12 @@ func (ps *PostgresStorer) ListOrders(ctx context.Context) ([]model.Order, error)
 	if err != nil {
 		return nil, fmt.Errorf("error listing orders: %w", err)
 	}
-	
+
 	for i := range orders {
-		var items []model.OrderItem 
-		err = ps.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=?", orders[i].ID)
+		var items []model.OrderItem
+
+		err = ps.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=$1", orders[i].ID)
+
 		if err != nil {
 			return nil, fmt.Errorf("error getting order items: %w", err)
 		}
@@ -105,12 +100,12 @@ func (ps *PostgresStorer) ListOrders(ctx context.Context) ([]model.Order, error)
 
 func (ps *PostgresStorer) DeleteOrder(ctx context.Context, id int64) error {
 	err := ps.execTx(ctx, func(tx *sqlx.Tx) error {
-		_, err := tx.ExecContext(ctx, "DELETE FROM order_items WHERE order_id=?", id)
+		_, err := tx.ExecContext(ctx, "DELETE FROM order_items WHERE order_id=$1", id)
 		if err != nil {
 			return fmt.Errorf("error deleting order items: %w", err)
 		}
 
-		_, err = tx.ExecContext(ctx, "DELETE FROM orders WHERE id=?", id)
+		_, err = tx.ExecContext(ctx, "DELETE FROM orders WHERE id=$1", id)
 		if err != nil {
 			return fmt.Errorf("error deleting order: %w", err)
 		}

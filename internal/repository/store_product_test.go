@@ -12,7 +12,6 @@ import (
 )
 
 func TestCreateProduct(t *testing.T) {
-
 	p := &model.Product{
 		Name:         "test product",
 		Image:        "test image",
@@ -29,27 +28,18 @@ func TestCreateProduct(t *testing.T) {
 		test func(*testing.T, *PostgresStorer, sqlmock.Sqlmock)
 	}{
 		{
-			name: "sucess",
+			name: "success",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id"}).
+					AddRow(1)
 
-				m.ExpectExec("INSERT INTO products (name, image, category, description, rating, num_reviews, price, count_in_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").WillReturnResult(sqlmock.NewResult(1, 1))
+				m.ExpectQuery(`INSERT INTO products ( name, image, category, description, rating, num_reviews, price, count_in_stock ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`).WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock).WillReturnRows(rows)
+
 				cp, err := s.CreateProduct(context.Background(), p)
-				if err != nil {
-					t.Fatalf("error creating product: %v", err)
-				}
 
 				require.NoError(t, err)
 				require.Equal(t, int64(1), cp.ID)
-				m.ExpectationsWereMet()
-				require.NoError(t, err)
-			},
-		},
-		{
-			name: "failed getting last insert ID",
-			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectExec("INSERT INTO products (name, image, category, description, rating, num_reviews, price, count_in_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("error getting last insert ID")))
-				_, err := s.CreateProduct(context.Background(), p)
-				require.Error(t, err)
+
 				err = m.ExpectationsWereMet()
 				require.NoError(t, err)
 			},
@@ -57,9 +47,12 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "failed inserting product",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectExec("INSERT INTO products (name, image, category, description, rating, num_reviews, price, count_in_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").WillReturnError(fmt.Errorf("error inserting product"))
+				m.ExpectQuery(`INSERT INTO products ( name, image, category, description, rating, num_reviews, price, count_in_stock ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`).WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock).WillReturnError(fmt.Errorf("error inserting product"))
+
 				_, err := s.CreateProduct(context.Background(), p)
+
 				require.Error(t, err)
+
 				err = m.ExpectationsWereMet()
 				require.NoError(t, err)
 			},
@@ -98,7 +91,7 @@ func TestGetProduct(t *testing.T) {
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "name", "image", "category", "description", "rating", "num_reviews", "price", "count_in_stock", "created_at", "updated_at"}).AddRow(1, p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.CreatedAt, p.UpdatedAt)
 
-				m.ExpectQuery("SELECT * FROM products WHERE id=?").WithArgs(1).WillReturnRows(rows)
+				m.ExpectQuery("SELECT * FROM products WHERE id=$1").WithArgs(1).WillReturnRows(rows)
 
 				gp, err := s.GetProduct(context.Background(), 1)
 				require.NoError(t, err)
@@ -110,7 +103,7 @@ func TestGetProduct(t *testing.T) {
 		}, {
 			name: "failed getting product",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectQuery("SELECT * FROM products WHERE id=?").WithArgs(1).WillReturnError(fmt.Errorf("error getting product"))
+				m.ExpectQuery("SELECT * FROM products WHERE id=$1").WithArgs(1).WillReturnError(fmt.Errorf("error getting product"))
 
 				_, err := s.GetProduct(context.Background(), 1)
 				require.Error(t, err)
@@ -150,7 +143,7 @@ func TestListProducts(t *testing.T) {
 		{
 			name: "success",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "name", "category", "image", "description", "rating", "num_reviews", "price", "count_in_stock", "created_at", "updated_at"}).AddRow(1, p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.CreatedAt, p.UpdatedAt)
+				rows := sqlmock.NewRows([]string{"id", "name", "category", "image", "description", "rating", "num_reviews", "price", "count_in_stock", "created_at", "updated_at"}).AddRow(p.ID, p.Name, p.Category, p.Image, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.CreatedAt, p.UpdatedAt)
 
 				m.ExpectQuery("SELECT * FROM products").
 					WillReturnRows(rows)
@@ -210,14 +203,11 @@ func TestUpdateProduct(t *testing.T) {
 		{
 			name: "success",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectExec(
-					"UPDATE products SET name=?, image=?, category=?, description=?, rating=?, num_reviews=?, price=?, count_in_stock=?, updated_at=? WHERE id=?",
-				).WillReturnResult(sqlmock.NewResult(0, 1))
+				m.ExpectExec(`UPDATE products SET name=$1, image=$2, category=$3, description=$4, rating=$5, num_reviews=$6, price=$7, count_in_stock=$8, updated_at=$9 WHERE id=$10`).
+					WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.UpdatedAt, p.ID).
+					WillReturnResult(sqlmock.NewResult(0, 1))
 
-				updatedProduct, err := s.UpdateProduct(
-					context.Background(),
-					p,
-				)
+				updatedProduct, err := s.UpdateProduct(context.Background(), p)
 
 				require.NoError(t, err)
 				require.Equal(t, int64(1), updatedProduct.ID)
@@ -231,13 +221,11 @@ func TestUpdateProduct(t *testing.T) {
 			name: "failed updating product",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
 				m.ExpectExec(
-					"UPDATE products SET name=?, image=?, category=?, description=?, rating=?, num_reviews=?, price=?, count_in_stock=?, updated_at=? WHERE id=?",
-				).WillReturnError(fmt.Errorf("error updating product"))
+					"UPDATE products SET name=$1, image=$2, category=$3, description=$4, rating=$5, num_reviews=$6, price=$7, count_in_stock=$8, updated_at=$9 WHERE id=$10").
+					WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock, p.UpdatedAt, p.ID).
+					WillReturnError(fmt.Errorf("error updating product"))
 
-				_, err := s.UpdateProduct(
-					context.Background(),
-					p,
-				)
+				_, err := s.UpdateProduct(context.Background(), p)
 
 				require.Error(t, err)
 
@@ -265,9 +253,9 @@ func TestDeleteProduct(t *testing.T) {
 		{
 			name: "success",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectExec("DELETE FROM products WHERE id=?").
+				m.ExpectExec("DELETE FROM products WHERE id=$1").
 					WithArgs(1).
-					WillReturnResult(sqlmock.NewResult(1, 1))
+					WillReturnResult(sqlmock.NewResult(0, 1))
 
 				err := s.DeleteProduct(context.Background(), 1)
 
@@ -280,7 +268,7 @@ func TestDeleteProduct(t *testing.T) {
 		{
 			name: "failed deleting product",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectExec("DELETE FROM products WHERE id=?").
+				m.ExpectExec("DELETE FROM products WHERE id=$1").
 					WithArgs(1).
 					WillReturnError(fmt.Errorf("error deleting product"))
 
