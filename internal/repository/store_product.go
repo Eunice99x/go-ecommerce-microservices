@@ -15,7 +15,7 @@ func (ps *PostgresStorer) CreateProduct(ctx context.Context, p *model.Product) (
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return nil, fmt.Errorf("error getting last id: %v", id)
+		return nil, fmt.Errorf("error getting last id: %v", err)
 	}
 	p.ID = id
 
