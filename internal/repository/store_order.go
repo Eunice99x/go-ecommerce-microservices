@@ -19,7 +19,7 @@ func (ps *PostgresStorer) CreateOrder(ctx context.Context, o *model.Order) (*mod
 		for _, oi := range o.Items {
 			oi.OrderID = order.ID
 
-			err = createOrderItem(ctx, tx, oi)
+			err = createOrderItem(ctx, tx, &oi)
 			if err != nil {
 				return fmt.Errorf("error creating order item: %w", err)
 			}
@@ -50,7 +50,7 @@ func createOrder(ctx context.Context, tx *sqlx.Tx, o *model.Order) (*model.Order
 	return o, nil
 }
 
-func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi model.OrderItem) (error) {
+func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi *model.OrderItem) (error) {
 	res, err := tx.NamedExecContext(ctx, "INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES (:name, :quantity, :image, :price, :product_id, :order_id)", oi)
 	if err != nil {
 		return fmt.Errorf("error inserting order item: %w", err)

@@ -6,6 +6,6 @@ type OrderItem struct {
 	Quantity  int64   `json:"quantity"`
 	Image     string  `json:"image"`
 	Price     float64 `json:"price"`
-	ProductID int64   `json:"product_id"`
-	OrderID   int64   `json:"order_id"`
+	ProductID int64   `json:"product_id" db:"product_id"`
+	OrderID   int64   `json:"order_id" db:"order_id"`
 }
