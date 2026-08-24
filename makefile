@@ -4,6 +4,9 @@ DB_USER=postgres
 DB_PASSWORD=postgres
 DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)?sslmode=disable
 
+go-run:
+	go run ./cmd/api/main.go
+
 db-up:
 	docker start $(DB_CONTAINER)
 

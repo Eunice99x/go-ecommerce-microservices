@@ -7,6 +7,7 @@ import (
 
 	"github.com/eunice99x/goMicro/db"
 	"github.com/eunice99x/goMicro/internal/repository"
+	"github.com/eunice99x/goMicro/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -25,8 +26,9 @@ func main() {
 	log.Printf("successfully connected to database")
 
 	store := repository.NewPostgresStorer(db.GetDB())
+	service := service.NewService(store)
 
-	fmt.Print(store)
+	fmt.Print(store, service)
 
 	http.ListenAndServe(":3000", r)
 }
