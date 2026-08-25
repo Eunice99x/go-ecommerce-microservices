@@ -12,10 +12,14 @@ type Database struct {
 }
 
 func NewDatabase() (*Database, error) {
-	db, err := sqlx.Open("postgres", "postgresql://postgres:postgres@localhost:5432/ecomm?sslmode=disable?parseTime=true")
+	db, err := sqlx.Open("postgres", "postgres://postgres:postgres@localhost:5433/ecomm?sslmode=disable")
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+
+	if err := db.Ping(); err != nil {
+        return nil, fmt.Errorf("error pinging database: %w", err)
+    }
 
 	return &Database{db:db}, nil
 }

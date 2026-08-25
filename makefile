@@ -2,7 +2,7 @@ DB_CONTAINER=go-micro
 DB_NAME=ecomm
 DB_USER=postgres
 DB_PASSWORD=postgres
-DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@localhost:5432/$(DB_NAME)?sslmode=disable
+DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@localhost:5433/$(DB_NAME)?sslmode=disable
 
 go-run:
 	go run ./cmd/api/main.go
