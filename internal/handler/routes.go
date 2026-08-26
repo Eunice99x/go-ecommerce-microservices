@@ -18,7 +18,19 @@ func RegisterRoutes(handler *Handler) *chi.Mux{
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", handler.GetProduct)
 			r.Patch("/", handler.UpdateProduct)
-			r.Patch("/", handler.DeleteProduct)
+			r.Delete("/", handler.DeleteProduct)
+		})
+	})
+
+
+	r.Route("/orders", func(r chi.Router) {
+		r.Post("/", handler.CreateOrder)
+		r.Get("/", handler.ListOrders)
+
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/", handler.GetOrder)
+			// r.Patch("/", handler.UpdateOrder)
+			r.Delete("/", handler.DeleteOrder)
 		})
 	})
 

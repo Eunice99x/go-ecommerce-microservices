@@ -75,8 +75,8 @@ func (ps *PostgresStorer) GetOrder(ctx context.Context, id int64) (*model.Order,
 	return &o, nil
 }
 
-func (ps *PostgresStorer) ListOrders(ctx context.Context) ([]model.Order, error) {
-	var orders []model.Order
+func (ps *PostgresStorer) ListOrders(ctx context.Context) ([]*model.Order, error) {
+	var orders []*model.Order
 	err := ps.db.SelectContext(ctx, &orders, "SELECT * FROM orders")
 	if err != nil {
 		return nil, fmt.Errorf("error listing orders: %w", err)
