@@ -20,12 +20,12 @@ func (ps *PostgresStorer) CreateProduct(ctx context.Context, p *model.Product) (
 			count_in_stock
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id
+		RETURNING id, created_at
 	`
 
 	err := ps.db.GetContext(
 		ctx,
-		&p.ID,
+		p,
 		query,
 		p.Name,
 		p.Image,

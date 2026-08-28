@@ -1,13 +1,9 @@
 package service
 
-import (
-	"github.com/eunice99x/goMicro/internal/repository"
-)
-
 type Service struct {
-	storer *repository.PostgresStorer
+	storer Storer
 }
 
-func NewService(storer *repository.PostgresStorer) *Service {
+func NewService(storer Storer) *Service {
 	return &Service{storer: storer}
 }

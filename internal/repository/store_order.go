@@ -36,9 +36,9 @@ func (ps *PostgresStorer) CreateOrder(ctx context.Context, o *model.Order) (*mod
 }
 
 func createOrder(ctx context.Context, tx *sqlx.Tx, o *model.Order) (*model.Order, error) {
-	query := `INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id`
+	query := `INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
 
-	err := tx.GetContext(ctx, &o.ID, query, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice)
+	err := tx.GetContext(ctx, o, query, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice)
 	if err != nil {
 		return nil, fmt.Errorf("error inserting order: %w", err)
 	}

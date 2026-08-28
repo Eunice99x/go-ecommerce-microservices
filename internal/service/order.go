@@ -14,11 +14,7 @@ func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order
 	for i := range o.Items {
 		product, err := s.storer.GetProduct(ctx, o.Items[i].ProductID)
 		if err != nil {
-			return nil, fmt.Errorf(
-				"error getting product %d: %w",
-				o.Items[i].ProductID,
-				err,
-			)
+			return nil, fmt.Errorf("error getting product %d: %w", o.Items[i].ProductID, err)
 		}
 
 		if o.Items[i].Quantity <= 0 {
@@ -30,8 +26,8 @@ func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order
 		}
 
 		o.Items[i].Name = product.Name
-		o.Items[i].Image = product.Image
-		o.Items[i].Price = product.Price
+    	o.Items[i].Image = product.Image
+    	o.Items[i].Price = product.Price
 
 		totalPrice += product.Price * float64(o.Items[i].Quantity)
 	}
