@@ -1,15 +1,11 @@
 package handler
 
-import (
-	"github.com/eunice99x/goMicro/internal/service"
-)
-
 type Handler struct {
-	service service.Service
+	service Services
 }
 
-func NewHandler(service *service.Service) *Handler {
+func NewHandler(service Services) *Handler {
 	return &Handler{
-		service: *service,
+		service: service,
 	}
 }
