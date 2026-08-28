@@ -96,7 +96,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, "error encoding response", http.StatusInternalServerError)
 		return
@@ -114,6 +114,7 @@ func(h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	o, err := h.service.GetOrder(r.Context(), i)
 	if err != nil {
 		http.Error(w, "cant get order by this id", http.StatusInternalServerError)
+		return
 	}
 
 	res := toOrderRes(o)

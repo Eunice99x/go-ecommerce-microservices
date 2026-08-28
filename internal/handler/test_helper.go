@@ -8,7 +8,9 @@ import (
 
 type fakeService struct {
 	product *model.Product
+	products []*model.Product
 	order *model.Order
+	orders []*model.Order
 	err error
 }
 
@@ -22,7 +24,7 @@ func (f *fakeService) CreateProduct(ctx context.Context, p *model.Product) (*mod
 }
 
 func (f *fakeService) ListProducts(ctx context.Context) ([]*model.Product, error) {
-	return nil, f.err
+	return f.products, f.err
 }
 
 func (f *fakeService) UpdateProduct(ctx context.Context, p *model.Product) (*model.Product, error) {
@@ -42,7 +44,7 @@ func (f *fakeService) GetOrder(ctx context.Context, id int64) (*model.Order, err
 }
 
 func (f *fakeService) ListOrders(ctx context.Context) ([]*model.Order, error) {
-	return nil, f.err
+	return f.orders, f.err
 }
 
 func (f *fakeService) DeleteOrder(ctx context.Context, id int64) error {
