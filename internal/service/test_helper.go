@@ -8,8 +8,8 @@ import (
 
 type fakeStorer struct {
 	product *model.Product
-	order *model.Order
-	err error
+	order   *model.Order
+	err     error
 }
 
 func (f *fakeStorer) GetProduct(ctx context.Context, id int64) (*model.Product, error) {

@@ -77,7 +77,7 @@ func TestCreateOrder(t *testing.T) {
 			},
 		},
 		{
-			name:"failed to create order",
+			name: "failed to create order",
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				s.ExpectBegin()
 
@@ -86,14 +86,14 @@ func TestCreateOrder(t *testing.T) {
 				s.ExpectRollback()
 
 				_, err := ps.CreateOrder(context.Background(), o)
-	
+
 				require.Error(t, err)
 				err = s.ExpectationsWereMet()
 				require.NoError(t, err)
 			},
 		},
 		{
-			name:"failed to create order item",
+			name: "failed to create order item",
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				s.ExpectBegin()
 
@@ -106,7 +106,7 @@ func TestCreateOrder(t *testing.T) {
 				s.ExpectRollback()
 
 				_, err := ps.CreateOrder(context.Background(), o)
-	
+
 				require.Error(t, err)
 				err = s.ExpectationsWereMet()
 				require.NoError(t, err)
@@ -138,7 +138,7 @@ func TestGetOrder(t *testing.T) {
 	}
 
 	o := &model.Order{
-		ID: 1,
+		ID:            1,
 		PaymentMethod: "cash",
 		TaxPrice:      22.2,
 		ShippingPrice: 100,
@@ -153,7 +153,7 @@ func TestGetOrder(t *testing.T) {
 		{
 			name: "success",
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
-				
+
 				oiRows := s.NewRows([]string{"id", "name", "quantity", "image", "price", "product_id", "order_id"}).AddRow(o.ID, oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID)
 
 				rows := s.NewRows([]string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "created_at", "updated_at"}).AddRow(o.ID, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.CreatedAt, o.UpdatedAt)
@@ -163,7 +163,6 @@ func TestGetOrder(t *testing.T) {
 
 				order, err := ps.GetOrder(context.Background(), 1)
 
-
 				require.NoError(t, err)
 				require.Equal(t, int64(1), order.ID)
 				err = s.ExpectationsWereMet()
@@ -171,7 +170,7 @@ func TestGetOrder(t *testing.T) {
 			},
 		},
 		{
-			name:"error getting order",
+			name: "error getting order",
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				s.ExpectQuery("SELECT * FROM orders WHERE id=$1").WithArgs(1).WillReturnError(fmt.Errorf("error getting order"))
 
@@ -184,7 +183,7 @@ func TestGetOrder(t *testing.T) {
 		},
 		{
 			name: "error getting order item",
-			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock)  {
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				rows := s.NewRows([]string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "created_at", "updated_at"}).AddRow(o.ID, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.CreatedAt, o.UpdatedAt)
 
 				s.ExpectQuery("SELECT * FROM orders WHERE id=$1").WithArgs(1).WillReturnRows(rows)
@@ -201,7 +200,7 @@ func TestGetOrder(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			withTestDB(t, func(db *sqlx.DB, s sqlmock.Sqlmock)  {
+			withTestDB(t, func(db *sqlx.DB, s sqlmock.Sqlmock) {
 				n := NewPostgresStorer(db)
 				tc.test(t, n, s)
 			})
@@ -233,14 +232,14 @@ func TestListOrders(t *testing.T) {
 	}{
 		{
 			name: "success",
-			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock){
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				rows := s.NewRows([]string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "created_at", "updated_at"}).AddRows(values...)
 
 				s.ExpectQuery("SELECT * FROM orders").WillReturnRows(rows)
 
 				for _, orderID := range []int64{1, 2, 3} {
-					oiRows := s.NewRows([]string{"id","name","quantity","image","price","product_id","order_id",}).
-					AddRow(oi.ID, oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, orderID)
+					oiRows := s.NewRows([]string{"id", "name", "quantity", "image", "price", "product_id", "order_id"}).
+						AddRow(oi.ID, oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, orderID)
 
 					s.ExpectQuery("SELECT * FROM order_items WHERE order_id=$1").WithArgs(orderID).WillReturnRows(oiRows)
 				}
@@ -275,8 +274,8 @@ func TestListOrders(t *testing.T) {
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				now := time.Now()
 
-				rows := s.NewRows([]string{"id","payment_method","tax_price","shipping_price","total_price","created_at","updated_at"}).
-				AddRow(1, "cash", 22.2, 100.0, 122.2, now, nil)
+				rows := s.NewRows([]string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "created_at", "updated_at"}).
+					AddRow(1, "cash", 22.2, 100.0, 122.2, now, nil)
 
 				s.ExpectQuery("SELECT * FROM orders").WillReturnRows(rows)
 				s.ExpectQuery("SELECT * FROM order_items WHERE order_id=$1").WithArgs(1).WillReturnError(fmt.Errorf("error getting order items"))

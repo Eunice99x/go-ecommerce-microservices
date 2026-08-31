@@ -95,7 +95,7 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error encoding response", http.StatusInternalServerError)
 		return
 	}
-}	
+}
 
 func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

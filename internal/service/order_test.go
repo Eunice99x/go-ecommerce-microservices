@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func TestCreateOrder(t *testing.T) {
 	tcs := []struct {
 		name string
@@ -18,35 +17,35 @@ func TestCreateOrder(t *testing.T) {
 			name: "success",
 			test: func(t *testing.T, s *Service, o *model.Order) {
 				p := &model.Product{
-					ID: 1,
-					Name:"Iphone",
-					Image: "https://exapmle.com",
-					Category: "Electronics",
-					Rating: 4,
-					NumReviews: 14,
-					Price: 999,
+					ID:           1,
+					Name:         "Iphone",
+					Image:        "https://exapmle.com",
+					Category:     "Electronics",
+					Rating:       4,
+					NumReviews:   14,
+					Price:        999,
 					CountInStock: 1234,
 				}
 
 				order := &model.Order{
-					ID: 1,
+					ID:            1,
 					PaymentMethod: "cash",
-					TaxPrice: 0.1,
+					TaxPrice:      0.1,
 					ShippingPrice: 12,
 				}
 
 				oi := &model.OrderItem{
-					ID: 1,
-					Quantity: 1,
+					ID:        1,
+					Quantity:  1,
 					ProductID: p.ID,
-					OrderID: order.ID,
+					OrderID:   order.ID,
 				}
 
 				order.Items = []model.OrderItem{*oi}
 
 				fakeStore := fakeStorer{
 					product: p,
-					order: order,
+					order:   order,
 				}
 
 				s = &Service{

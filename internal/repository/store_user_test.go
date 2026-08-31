@@ -34,7 +34,7 @@ func TestCreateUser(t *testing.T) {
 					AddRow(1, now)
 
 				s.ExpectQuery(`INSERT INTO users (name, email, password, is_admin) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).
-					WithArgs(u.Name, u.Email, u.Password, u.IsAdmin,).WillReturnRows(rows)
+					WithArgs(u.Name, u.Email, u.Password, u.IsAdmin).WillReturnRows(rows)
 
 				got, err := ps.CreateUser(context.Background(), u)
 

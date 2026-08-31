@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-
 func withTestDB(t *testing.T, fn func(*sqlx.DB, sqlmock.Sqlmock)) {
 	mockDB, m, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {

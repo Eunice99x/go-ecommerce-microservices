@@ -7,13 +7,12 @@ import (
 )
 
 type fakeService struct {
-	product *model.Product
+	product  *model.Product
 	products []*model.Product
-	order *model.Order
-	orders []*model.Order
-	err error
+	order    *model.Order
+	orders   []*model.Order
+	err      error
 }
-
 
 func (f *fakeService) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
 	return f.product, f.err

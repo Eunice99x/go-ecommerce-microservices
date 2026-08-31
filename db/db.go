@@ -18,10 +18,10 @@ func NewDatabase() (*Database, error) {
 	}
 
 	if err := db.Ping(); err != nil {
-        return nil, fmt.Errorf("error pinging database: %w", err)
-    }
+		return nil, fmt.Errorf("error pinging database: %w", err)
+	}
 
-	return &Database{db:db}, nil
+	return &Database{db: db}, nil
 }
 
 func (d *Database) Close() error {

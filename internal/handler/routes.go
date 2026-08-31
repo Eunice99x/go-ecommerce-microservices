@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func RegisterRoutes(handler *Handler) *chi.Mux{
+func RegisterRoutes(handler *Handler) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -21,7 +21,6 @@ func RegisterRoutes(handler *Handler) *chi.Mux{
 			r.Delete("/", handler.DeleteProduct)
 		})
 	})
-
 
 	r.Route("/orders", func(r chi.Router) {
 		r.Post("/", handler.CreateOrder)

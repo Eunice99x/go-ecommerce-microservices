@@ -15,10 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
-
 func TestCreateProduct(t *testing.T) {
-	tcs := []struct{
+	tcs := []struct {
 		name string
 		test func(*testing.T)
 	}{
@@ -26,13 +24,13 @@ func TestCreateProduct(t *testing.T) {
 			name: "success",
 			test: func(t *testing.T) {
 				p := &model.Product{
-					ID: 1,
-					Name:"Iphone",
-					Image: "https://exapmle.com",
-					Category: "Electronics",
-					Rating: 4,
-					NumReviews: 14,
-					Price: 999,
+					ID:           1,
+					Name:         "Iphone",
+					Image:        "https://exapmle.com",
+					Category:     "Electronics",
+					Rating:       4,
+					NumReviews:   14,
+					Price:        999,
 					CountInStock: 1234,
 				}
 
@@ -138,23 +136,23 @@ func TestCreateProduct(t *testing.T) {
 	}
 }
 
-func TestGetProduct(t *testing.T){
-	tcs := []struct{
+func TestGetProduct(t *testing.T) {
+	tcs := []struct {
 		name string
 		test func(*testing.T)
 	}{
-		{	
+		{
 			name: "success",
 			test: func(t *testing.T) {
 
 				p := &model.Product{
-					ID: 1,
-					Name:"Iphone",
-					Image: "https://exapmle.com",
-					Category: "Electronics",
-					Rating: 4,
-					NumReviews: 14,
-					Price: 999,
+					ID:           1,
+					Name:         "Iphone",
+					Image:        "https://exapmle.com",
+					Category:     "Electronics",
+					Rating:       4,
+					NumReviews:   14,
+					Price:        999,
 					CountInStock: 1234,
 				}
 
@@ -178,7 +176,6 @@ func TestGetProduct(t *testing.T){
 				h.GetProduct(rec, req)
 				require.Equal(t, http.StatusOK, rec.Code)
 			},
-
 		},
 		{
 			name: "invalid product id",

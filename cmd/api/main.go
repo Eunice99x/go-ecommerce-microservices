@@ -23,8 +23,8 @@ func main() {
 	hld := handler.NewHandler(service)
 
 	r := handler.RegisterRoutes(hld)
-	
+
 	if err := handler.Start(":3000", r); err != nil {
-    	log.Fatal(err)
+		log.Fatal(err)
 	}
 }

@@ -13,7 +13,7 @@ import (
 
 func toOrderItemModel(oi dto.OrderItemReq) *model.OrderItem {
 	return &model.OrderItem{
-		Quantity: oi.Quantity,
+		Quantity:  oi.Quantity,
 		ProductID: oi.ProductID,
 	}
 }
@@ -26,7 +26,7 @@ func toOrderModel(o dto.OrderReq) *model.Order {
 	}
 
 	return &model.Order{
-		Items: items,
+		Items:         items,
 		PaymentMethod: o.PaymentMethod,
 	}
 }
@@ -103,7 +103,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func(h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {

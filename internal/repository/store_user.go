@@ -7,7 +7,7 @@ import (
 	"github.com/eunice99x/goMicro/internal/model"
 )
 
-func (ps *PostgresStorer) CreateUser(ctx context.Context, u *model.User) (*model.User, error){
+func (ps *PostgresStorer) CreateUser(ctx context.Context, u *model.User) (*model.User, error) {
 	query := `INSERT INTO users (name, email, password, is_admin) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
 
 	err := ps.db.GetContext(ctx, u, query, u.Name, u.Email, u.Password, u.IsAdmin)

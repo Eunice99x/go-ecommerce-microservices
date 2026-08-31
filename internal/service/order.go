@@ -7,8 +7,7 @@ import (
 	"github.com/eunice99x/goMicro/internal/model"
 )
 
-
-func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order, error){
+func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order, error) {
 	var totalPrice float64
 
 	for i := range o.Items {
@@ -26,8 +25,8 @@ func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order
 		}
 
 		o.Items[i].Name = product.Name
-    	o.Items[i].Image = product.Image
-    	o.Items[i].Price = product.Price
+		o.Items[i].Image = product.Image
+		o.Items[i].Price = product.Price
 
 		totalPrice += product.Price * float64(o.Items[i].Quantity)
 	}
@@ -42,14 +41,13 @@ func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order
 	return order, nil
 }
 
-func (s *Service) GetOrder(ctx context.Context, id int64) (*model.Order, error){
+func (s *Service) GetOrder(ctx context.Context, id int64) (*model.Order, error) {
 	return s.storer.GetOrder(ctx, id)
 }
 
-func (s *Service) ListOrders(ctx context.Context) ([]*model.Order, error){
+func (s *Service) ListOrders(ctx context.Context) ([]*model.Order, error) {
 	return s.storer.ListOrders(ctx)
 }
-
 
 // will do it later after adding noti
 // func (s *Service) UpdateOrder(ctx context.Context, p *model.Order) (*model.Order, error) {
