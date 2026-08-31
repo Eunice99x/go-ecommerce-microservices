@@ -33,7 +33,7 @@ func TestCreateProduct(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"id"}).
 					AddRow(1)
 
-				m.ExpectQuery(`INSERT INTO products ( name, image, category, description, rating, num_reviews, price, count_in_stock ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`).WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock).WillReturnRows(rows)
+				m.ExpectQuery(`INSERT INTO products ( name, image, category, description, rating, num_reviews, price, count_in_stock ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`).WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock).WillReturnRows(rows)
 
 				cp, err := s.CreateProduct(context.Background(), p)
 
@@ -47,7 +47,7 @@ func TestCreateProduct(t *testing.T) {
 		{
 			name: "failed inserting product",
 			test: func(t *testing.T, s *PostgresStorer, m sqlmock.Sqlmock) {
-				m.ExpectQuery(`INSERT INTO products ( name, image, category, description, rating, num_reviews, price, count_in_stock ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`).WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock).WillReturnError(fmt.Errorf("error inserting product"))
+				m.ExpectQuery(`INSERT INTO products ( name, image, category, description, rating, num_reviews, price, count_in_stock ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`).WithArgs(p.Name, p.Image, p.Category, p.Description, p.Rating, p.NumReviews, p.Price, p.CountInStock).WillReturnError(fmt.Errorf("error inserting product"))
 
 				_, err := s.CreateProduct(context.Background(), p)
 

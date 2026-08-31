@@ -14,7 +14,6 @@ import (
 )
 
 func TestCreateOrder(t *testing.T) {
-
 	p := &model.Product{
 		ID:           1,
 		Name:         "iphone",
@@ -60,7 +59,7 @@ func TestCreateOrder(t *testing.T) {
 				oiRows := sqlmock.NewRows([]string{"id"}).
 					AddRow(1)
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
 
 				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnRows(oiRows)
 
@@ -82,7 +81,7 @@ func TestCreateOrder(t *testing.T) {
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				s.ExpectBegin()
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnError(fmt.Errorf("error inserting order"))
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnError(fmt.Errorf("error inserting order"))
 
 				s.ExpectRollback()
 
@@ -100,7 +99,7 @@ func TestCreateOrder(t *testing.T) {
 
 				oRows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
 
 				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnError(fmt.Errorf("error inserting order item"))
 
