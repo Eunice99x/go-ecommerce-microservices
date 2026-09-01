@@ -3,13 +3,20 @@ package main
 import (
 	"log"
 
+	"github.com/eunice99x/goMicro/cmd/config"
 	"github.com/eunice99x/goMicro/db"
 	"github.com/eunice99x/goMicro/internal/handler"
+	"github.com/eunice99x/goMicro/internal/pkg/auth"
 	"github.com/eunice99x/goMicro/internal/repository"
 	"github.com/eunice99x/goMicro/internal/service"
 )
 
 func main() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load configuration: %v", err)
+	}
+
 	db, err := db.NewDatabase()
 	if err != nil {
 		log.Fatalf("error opening db: %v", err)
@@ -18,8 +25,10 @@ func main() {
 
 	log.Printf("successfully connected to database")
 
+	tokenGen := auth.DefaultJWTConfig(cfg.SecretKey)
+
 	store := repository.NewPostgresStorer(db.GetDB())
-	service := service.NewService(store)
+	service := service.NewService(store, tokenGen)
 	hld := handler.NewHandler(service)
 
 	r := handler.RegisterRoutes(hld)

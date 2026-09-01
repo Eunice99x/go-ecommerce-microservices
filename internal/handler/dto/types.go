@@ -1,6 +1,8 @@
 package dto
 
-import "time"
+import (
+	"time"
+)
 
 type ProductReq struct {
 	Name         string  `json:"name"`
@@ -52,4 +54,29 @@ type OrderItemRes struct {
 	Image     string  `json:"image"`
 	Price     float64 `json:"price"`
 	ProductID int64   `json:"product_id"`
+}
+
+type UserReq struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type UserRes struct {
+	ID        int64      `json:"id"`
+	Name      string     `json:"name"`
+	Email     string     `json:"email"`
+	IsAdmin   bool       `json:"is_admin"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
+}
+
+type LoginUserReq struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginUserRes struct {
+	AccessToken string  `json:"access_token"`
+	User        UserRes `json:"user"`
 }

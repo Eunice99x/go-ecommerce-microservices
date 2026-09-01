@@ -17,4 +17,10 @@ type Storer interface {
 	GetOrder(ctx context.Context, id int64) (*model.Order, error)
 	ListOrders(ctx context.Context) ([]*model.Order, error)
 	DeleteOrder(ctx context.Context, id int64) error
+
+	CreateUser(ctx context.Context, u *model.User) (*model.User, error)
+	GetUser(ctx context.Context, email string) (*model.User, error)
+	ListUsers(ctx context.Context) ([]*model.User, error)
+	UpdateUser(ctx context.Context, u *model.User) (*model.User, error)
+	DeleteUser(ctx context.Context, id int64) error
 }
