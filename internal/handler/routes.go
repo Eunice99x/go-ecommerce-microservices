@@ -44,12 +44,16 @@ func RegisterRoutes(handler *Handler) *chi.Mux {
 			r.Patch("/", handler.UpdateUser)
 		})
 
-		// DELETE /users/123
 		r.Delete("/{id}", handler.DeleteUser)
 	})
 
-	// POST /login
+	// auth
 	r.Post("/login", handler.LoginUser)
+	r.Post("/refresh", handler.RenewAccessToken)
+	r.Delete("/logout/{id}", handler.LogoutUser)
+
+	// sessions
+	r.Patch("/sessions/{id}/revoke", handler.RevokeSession)
 
 	return r
 }

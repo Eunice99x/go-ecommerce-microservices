@@ -10,6 +10,7 @@ type fakeStorer struct {
 	product *model.Product
 	order   *model.Order
 	user    *model.User
+	session *model.Session
 	err     error
 }
 
@@ -70,5 +71,23 @@ func (f *fakeStorer) UpdateUser(ctx context.Context, u *model.User) (*model.User
 }
 
 func (f *fakeStorer) DeleteUser(ctx context.Context, id int64) error {
+	return f.err
+}
+
+// session fake funcs
+
+func (f *fakeStorer) CreateSession(ctx context.Context, s *model.Session) (*model.Session, error) {
+	return f.session, f.err
+}
+
+func (f *fakeStorer) GetSession(ctx context.Context, id string) (*model.Session, error) {
+	return f.session, f.err
+}
+
+func (f *fakeStorer) RevokeSession(ctx context.Context, id string) error {
+	return f.err
+}
+
+func (f *fakeStorer) DeleteSession(ctx context.Context, id string) error {
 	return f.err
 }

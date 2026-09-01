@@ -101,7 +101,7 @@ func (c *JWTConfig) generateToken(tc tokenClaims) (string, error) {
 	return signed, nil
 }
 
-func (c *JWTConfig) ValidateToken(tokenString string) (*Claims, error) {
+func (c *JWTConfig) ValidateToken(tokenString, expectedType string) (*Claims, error) {
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	tokenString = strings.TrimSpace(tokenString)
 
@@ -127,6 +127,10 @@ func (c *JWTConfig) ValidateToken(tokenString string) (*Claims, error) {
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	if claims.TokenType != expectedType {
 		return nil, ErrInvalidToken
 	}
 

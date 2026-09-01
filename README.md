@@ -18,3 +18,7 @@ The application is composed of independent services communicating over **gRPC**,
 ## Status
 
 Work in progress.
+
+## next
+
+add tests to each layer

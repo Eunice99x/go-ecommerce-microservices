@@ -2,18 +2,23 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"github.com/eunice99x/goMicro/internal/model"
+	"github.com/eunice99x/goMicro/internal/service"
 )
 
 type fakeService struct {
-	product  *model.Product
-	products []*model.Product
-	order    *model.Order
-	orders   []*model.Order
-	user     *model.User
-	users    []*model.User
-	err      error
+	product     *model.Product
+	products    []*model.Product
+	order       *model.Order
+	orders      []*model.Order
+	user        *model.User
+	users       []*model.User
+	loginResult *service.LoginResult
+	accessToken string
+	expiresAt   time.Time
+	err         error
 }
 
 func (f *fakeService) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
@@ -77,6 +82,18 @@ func (f *fakeService) DeleteUser(ctx context.Context, id int64) error {
 }
 
 // user login
-func (f *fakeService) LoginUser(ctx context.Context, email, password string) (*model.User, string, error) {
-	return f.user, "", f.err
+func (f *fakeService) LoginUser(ctx context.Context, email, password string) (*service.LoginResult, error) {
+	return nil, f.err
+}
+
+func (f *fakeService) RenewAccessToken(ctx context.Context, refreshToken string) (string, time.Time, error) {
+	return f.accessToken, f.expiresAt, f.err
+}
+
+func (f *fakeService) RevokeSession(ctx context.Context, id string) error {
+	return f.err
+}
+
+func (f *fakeService) DeleteSession(ctx context.Context, id string) error {
+	return f.err
 }

@@ -2,8 +2,10 @@ package handler
 
 import (
 	"context"
+	"time"
 
 	"github.com/eunice99x/goMicro/internal/model"
+	"github.com/eunice99x/goMicro/internal/service"
 )
 
 type Services interface {
@@ -24,5 +26,8 @@ type Services interface {
 	UpdateUser(ctx context.Context, u *model.User) (*model.User, error)
 	DeleteUser(ctx context.Context, id int64) error
 
-	LoginUser(ctx context.Context, email, password string) (*model.User, string, error)
+	LoginUser(ctx context.Context, email, password string) (*service.LoginResult, error)
+	RenewAccessToken(ctx context.Context, refreshToken string) (string, time.Time, error)
+	RevokeSession(ctx context.Context, id string) error
+	DeleteSession(ctx context.Context, id string) error
 }

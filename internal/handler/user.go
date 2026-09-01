@@ -184,21 +184,84 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, accessToken, err := h.service.LoginUser(r.Context(), req.Email, req.Password)
+	result, err := h.service.LoginUser(r.Context(), req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
 	res := dto.LoginUserRes{
-		AccessToken: accessToken,
-		User:        toUserRes(user),
+		SessionID:             result.SessionID,
+		AccessToken:           result.AccessToken,
+		RefreshToken:          result.RefreshToken,
+		AccessTokenExpiresAt:  result.AccessTokenExpiresAt,
+		RefreshTokenExpiresAt: result.RefreshTokenExpiresAt,
+		User:                  toUserRes(result.User),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, "error encoding response", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handler) LogoutUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "session id is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.DeleteSession(r.Context(), id); err != nil {
+		http.Error(w, "error deleting session", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) RenewAccessToken(w http.ResponseWriter, r *http.Request) {
+	var req dto.RenewAccessTokenReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "error decoding request body", http.StatusBadRequest)
+		return
+	}
+
+	accessToken, expiresAt, err := h.service.RenewAccessToken(r.Context(), req.RefreshToken)
+	if err != nil {
+		http.Error(w, "invalid refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	res := dto.RenewAccessTokenRes{
+		AccessToken:          accessToken,
+		AccessTokenExpiresAt: expiresAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		http.Error(w, "error encoding response", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *Handler) RevokeSession(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "session id is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.RevokeSession(r.Context(), id); err != nil {
+		http.Error(w, "error revoking session", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
