@@ -43,7 +43,11 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("error opening db: %w", err)
 	}
-	defer database.Close()
+	defer func() {
+		if err := database.Close(); err != nil {
+			log.Printf("error closing database: %v", err)
+		}
+	}()
 
 	log.Println("successfully connected to database")
 

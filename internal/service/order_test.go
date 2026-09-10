@@ -11,11 +11,11 @@ import (
 func TestCreateOrder(t *testing.T) {
 	tcs := []struct {
 		name string
-		test func(*testing.T, *Service, *model.Order)
+		test func(*testing.T)
 	}{
 		{
 			name: "success",
-			test: func(t *testing.T, s *Service, o *model.Order) {
+			test: func(t *testing.T) {
 				p := &model.Product{
 					ID:           1,
 					Name:         "Iphone",
@@ -48,7 +48,7 @@ func TestCreateOrder(t *testing.T) {
 					order:   order,
 				}
 
-				s = &Service{
+				s := &Service{
 					storer: &fakeStore,
 				}
 
@@ -62,7 +62,7 @@ func TestCreateOrder(t *testing.T) {
 		},
 		{
 			name: "failed getting product",
-			test: func(t *testing.T, s *Service, o *model.Order) {
+			test: func(t *testing.T) {
 				order := &model.Order{
 					PaymentMethod: "cash",
 					Items: []model.OrderItem{
@@ -77,7 +77,7 @@ func TestCreateOrder(t *testing.T) {
 					err: fmt.Errorf("error getting product"),
 				}
 
-				s = &Service{
+				s := &Service{
 					storer: &fakeStore,
 				}
 
@@ -88,7 +88,7 @@ func TestCreateOrder(t *testing.T) {
 		},
 		{
 			name: "invalid quantity",
-			test: func(t *testing.T, s *Service, o *model.Order) {
+			test: func(t *testing.T) {
 				p := &model.Product{
 					ID:           1,
 					Name:         "Iphone",
@@ -110,7 +110,7 @@ func TestCreateOrder(t *testing.T) {
 					product: p,
 				}
 
-				s = &Service{
+				s := &Service{
 					storer: &fakeStore,
 				}
 
@@ -121,7 +121,7 @@ func TestCreateOrder(t *testing.T) {
 		},
 		{
 			name: "not enough stock",
-			test: func(t *testing.T, s *Service, o *model.Order) {
+			test: func(t *testing.T) {
 				p := &model.Product{
 					ID:           1,
 					Name:         "Iphone",
@@ -143,7 +143,7 @@ func TestCreateOrder(t *testing.T) {
 					product: p,
 				}
 
-				s = &Service{
+				s := &Service{
 					storer: &fakeStore,
 				}
 
@@ -154,7 +154,7 @@ func TestCreateOrder(t *testing.T) {
 		},
 		{
 			name: "failed creating order",
-			test: func(t *testing.T, s *Service, o *model.Order) {
+			test: func(t *testing.T) {
 				order := &model.Order{
 					PaymentMethod: "cash",
 				}
@@ -163,7 +163,7 @@ func TestCreateOrder(t *testing.T) {
 					err: fmt.Errorf("error creating order"),
 				}
 
-				s = &Service{
+				s := &Service{
 					storer: &fakeStore,
 				}
 
@@ -176,7 +176,7 @@ func TestCreateOrder(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.test(t, nil, nil)
+			tc.test(t)
 		})
 	}
 }

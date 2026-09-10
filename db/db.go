@@ -35,7 +35,7 @@ func NewDatabase(dsn string) (*Database, error) {
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("error pinging database: %w", err)
 	}
 

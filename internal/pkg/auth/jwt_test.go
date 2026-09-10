@@ -39,13 +39,13 @@ func TestGenerateAccessToken(t *testing.T) {
 				require.Equal(t, "younes@example.com", claims.Email)
 				require.True(t, claims.IsAdmin)
 				require.Equal(t, "access", claims.TokenType)
-				require.Equal(t, "go-ecommerce", claims.RegisteredClaims.Issuer)
-				require.Equal(t, "younes@example.com", claims.RegisteredClaims.Subject)
+				require.Equal(t, "go-ecommerce", claims.Issuer)
+				require.Equal(t, "younes@example.com", claims.Subject)
 				require.NotEmpty(t, claims.RegisteredClaims.ID)
 				require.WithinDuration(
 					t,
 					time.Now().Add(c.AccessTokenExpiry),
-					claims.RegisteredClaims.ExpiresAt.Time,
+					claims.ExpiresAt.Time,
 					time.Minute,
 				)
 			},
@@ -101,7 +101,7 @@ func TestGenerateRefreshToken(t *testing.T) {
 	require.WithinDuration(
 		t,
 		time.Now().Add(c.RefreshTokenExpiry),
-		claims.RegisteredClaims.ExpiresAt.Time,
+		claims.ExpiresAt.Time,
 		time.Minute,
 	)
 }
