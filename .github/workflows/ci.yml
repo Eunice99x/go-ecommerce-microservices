@@ -1,49 +1,49 @@
 name: CI
 
 on:
-    push:
-    pull_request:
+  push:
+  pull_request:
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-            - name: Setup Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version-file: go.mod
-                  cache: true
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
 
-            - name: Download dependencies
-              run: go mod download
+      - name: Download dependencies
+        run: go mod download
 
-            - name: Format check
-              run: test -z "$(gofmt -l .)"
+      - name: Format check
+        run: test -z "$(gofmt -l .)"
 
-            - name: Vet
-              run: go vet ./...
+      - name: Vet
+        run: go vet ./...
 
-            - name: Run all tests
-              run: go test ./... -race -count=1
+      - name: Run all tests
+        run: go test ./... -race -count=1
 
-    lint:
-        runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-            - name: Setup Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version-file: go.mod
-                  cache: true
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
 
-            - name: golangci-lint
-              uses: golangci/golangci-lint-action@v6
-              with:
-                  version: latest
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
