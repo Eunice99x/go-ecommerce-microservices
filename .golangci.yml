@@ -1,0 +1,24 @@
+version: "2"
+
+linters:
+    enable:
+        - errcheck
+        - govet
+        - ineffassign
+        - staticcheck
+        - unused
+        - bodyclose
+        - errorlint
+        - noctx
+        - rowserrcheck
+        - sqlclosecheck
+
+    exclusions:
+        rules:
+            - path: _test\.go$
+              linters:
+                  - errcheck
+
+formatters:
+    enable:
+        - gofmt

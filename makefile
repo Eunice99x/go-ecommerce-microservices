@@ -24,3 +24,13 @@ migrate-down:
 
 test:
 	go test ./...
+
+test-race:
+	go test ./... -race -count=1
+
+test-cover:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out | tail -1
+
+lint:
+	golangci-lint run

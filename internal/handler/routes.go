@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -56,8 +54,4 @@ func RegisterRoutes(handler *Handler) *chi.Mux {
 	r.Patch("/sessions/{id}/revoke", handler.RevokeSession)
 
 	return r
-}
-
-func Start(addr string, r http.Handler) error {
-	return http.ListenAndServe(addr, r)
 }

@@ -1,23 +1,41 @@
 package db
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+)
+
+const (
+	maxOpenConns    = 25
+	maxIdleConns    = 25
+	connMaxLifetime = 5 * time.Minute
+	connectTimeout  = 10 * time.Second
 )
 
 type Database struct {
 	db *sqlx.DB
 }
 
-func NewDatabase() (*Database, error) {
-	db, err := sqlx.Open("postgres", "postgres://postgres:postgres@localhost:5433/ecomm?sslmode=disable")
+func NewDatabase(dsn string) (*Database, error) {
+	db, err := sqlx.Open("postgres", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetConnMaxLifetime(connMaxLifetime)
+
+	// sqlx.Open is lazy, so ping to fail fast on a bad host or password
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+	defer cancel()
+
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
 		return nil, fmt.Errorf("error pinging database: %w", err)
 	}
 
