@@ -19,6 +19,9 @@ type fakeService struct {
 	accessToken string
 	expiresAt   time.Time
 	err         error
+
+	// set to fail only the update call while the preceding get still succeeds
+	updateErr error
 }
 
 func (f *fakeService) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
@@ -34,6 +37,10 @@ func (f *fakeService) ListProducts(ctx context.Context) ([]*model.Product, error
 }
 
 func (f *fakeService) UpdateProduct(ctx context.Context, p *model.Product) (*model.Product, error) {
+	if f.updateErr != nil {
+		return nil, f.updateErr
+	}
+
 	return f.product, f.err
 }
 
@@ -74,6 +81,10 @@ func (f *fakeService) ListUsers(ctx context.Context) ([]*model.User, error) {
 }
 
 func (f *fakeService) UpdateUser(ctx context.Context, p *model.User) (*model.User, error) {
+	if f.updateErr != nil {
+		return nil, f.updateErr
+	}
+
 	return f.user, f.err
 }
 
@@ -83,7 +94,7 @@ func (f *fakeService) DeleteUser(ctx context.Context, id int64) error {
 
 // user login
 func (f *fakeService) LoginUser(ctx context.Context, email, password string) (*service.LoginResult, error) {
-	return nil, f.err
+	return f.loginResult, f.err
 }
 
 func (f *fakeService) RenewAccessToken(ctx context.Context, refreshToken string) (string, time.Time, error) {

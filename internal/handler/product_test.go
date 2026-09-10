@@ -464,6 +464,38 @@ func TestUpdateProduct(t *testing.T) {
 				require.Equal(t, http.StatusInternalServerError, rec.Code)
 			},
 		},
+		{
+			name: "failed updating product",
+			test: func(t *testing.T) {
+				req := httptest.NewRequest(
+					http.MethodPut,
+					"/products/1",
+					bytes.NewReader([]byte(`{"name":"Updated Iphone"}`)),
+				)
+
+				rctx := chi.NewRouteContext()
+				rctx.URLParams.Add("id", "1")
+
+				req = req.WithContext(
+					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
+				)
+
+				rec := httptest.NewRecorder()
+
+				fakeS := fakeService{
+					product:   &model.Product{ID: 1, Name: "Iphone"},
+					updateErr: fmt.Errorf("error updating product"),
+				}
+
+				h := &Handler{
+					service: &fakeS,
+				}
+
+				h.UpdateProduct(rec, req)
+
+				require.Equal(t, http.StatusInternalServerError, rec.Code)
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -561,6 +593,97 @@ func TestDeleteProduct(t *testing.T) {
 				h.DeleteProduct(rec, req)
 
 				require.Equal(t, http.StatusInternalServerError, rec.Code)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.test(t)
+		})
+	}
+}
+
+func TestPatchProductReq(t *testing.T) {
+	base := func() *model.Product {
+		return &model.Product{
+			ID:           1,
+			Name:         "Iphone",
+			Image:        "https://example.com",
+			Category:     "Electronics",
+			Description:  "old description",
+			Price:        999,
+			CountInStock: 1234,
+		}
+	}
+
+	tcs := []struct {
+		name string
+		test func(*testing.T)
+	}{
+		{
+			name: "patches every field",
+			test: func(t *testing.T) {
+				p := base()
+
+				patchProductReq(p, dto.ProductReq{
+					Name:         "Updated Iphone",
+					Image:        "https://updated.com",
+					Category:     "Phones",
+					Description:  "new description",
+					Price:        1200,
+					CountInStock: 10,
+				})
+
+				require.Equal(t, "Updated Iphone", p.Name)
+				require.Equal(t, "https://updated.com", p.Image)
+				require.Equal(t, "Phones", p.Category)
+				require.Equal(t, "new description", p.Description)
+				require.Equal(t, float64(1200), p.Price)
+				require.Equal(t, int64(10), p.CountInStock)
+				require.NotNil(t, p.UpdatedAt)
+			},
+		},
+		{
+			name: "leaves omitted fields untouched",
+			test: func(t *testing.T) {
+				p := base()
+
+				patchProductReq(p, dto.ProductReq{Name: "Updated Iphone"})
+
+				require.Equal(t, "Updated Iphone", p.Name)
+				require.Equal(t, "https://example.com", p.Image)
+				require.Equal(t, "Electronics", p.Category)
+				require.Equal(t, "old description", p.Description)
+				require.Equal(t, float64(999), p.Price)
+				require.Equal(t, int64(1234), p.CountInStock)
+			},
+		},
+		{
+			name: "an empty request only stamps updated_at",
+			test: func(t *testing.T) {
+				p := base()
+				want := base()
+
+				patchProductReq(p, dto.ProductReq{})
+
+				require.NotNil(t, p.UpdatedAt)
+
+				p.UpdatedAt = nil
+				require.Equal(t, want, p)
+			},
+		},
+		{
+			// zero is indistinguishable from "not sent", so stock cannot be
+			// zeroed and price cannot be set to free through this endpoint
+			name: "cannot patch a numeric field back to zero",
+			test: func(t *testing.T) {
+				p := base()
+
+				patchProductReq(p, dto.ProductReq{Price: 0, CountInStock: 0})
+
+				require.Equal(t, float64(999), p.Price)
+				require.Equal(t, int64(1234), p.CountInStock)
 			},
 		},
 	}

@@ -21,4 +21,4 @@ Work in progress.
 
 ## next
 
-add tests to each layer
+auth middleware

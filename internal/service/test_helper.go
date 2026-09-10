@@ -7,11 +7,17 @@ import (
 )
 
 type fakeStorer struct {
-	product *model.Product
-	order   *model.Order
-	user    *model.User
-	session *model.Session
-	err     error
+	product  *model.Product
+	products []*model.Product
+	order    *model.Order
+	orders   []*model.Order
+	user     *model.User
+	users    []*model.User
+	session  *model.Session
+	err      error
+
+	// set to fail only this call while the rest of the fake still succeeds
+	createSessionErr error
 }
 
 func (f *fakeStorer) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
@@ -23,7 +29,7 @@ func (f *fakeStorer) CreateProduct(ctx context.Context, p *model.Product) (*mode
 }
 
 func (f *fakeStorer) ListProducts(ctx context.Context) ([]*model.Product, error) {
-	return nil, f.err
+	return f.products, f.err
 }
 
 func (f *fakeStorer) UpdateProduct(ctx context.Context, p *model.Product) (*model.Product, error) {
@@ -45,7 +51,7 @@ func (f *fakeStorer) GetOrder(ctx context.Context, id int64) (*model.Order, erro
 }
 
 func (f *fakeStorer) ListOrders(ctx context.Context) ([]*model.Order, error) {
-	return nil, f.err
+	return f.orders, f.err
 }
 
 func (f *fakeStorer) DeleteOrder(ctx context.Context, id int64) error {
@@ -63,7 +69,7 @@ func (f *fakeStorer) CreateUser(ctx context.Context, u *model.User) (*model.User
 }
 
 func (f *fakeStorer) ListUsers(ctx context.Context) ([]*model.User, error) {
-	return nil, f.err
+	return f.users, f.err
 }
 
 func (f *fakeStorer) UpdateUser(ctx context.Context, u *model.User) (*model.User, error) {
@@ -77,6 +83,10 @@ func (f *fakeStorer) DeleteUser(ctx context.Context, id int64) error {
 // session fake funcs
 
 func (f *fakeStorer) CreateSession(ctx context.Context, s *model.Session) (*model.Session, error) {
+	if f.createSessionErr != nil {
+		return nil, f.createSessionErr
+	}
+
 	return f.session, f.err
 }
 
