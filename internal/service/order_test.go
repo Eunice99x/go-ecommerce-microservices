@@ -273,6 +273,29 @@ func TestListOrders(t *testing.T) {
 	}
 }
 
+func TestListOrdersByUser(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		s := &Service{
+			storer: &fakeStorer{orders: []*model.Order{{ID: 1, UserID: 7}}},
+		}
+
+		got, err := s.ListOrdersByUser(t.Context(), 7)
+
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+	})
+
+	t.Run("failed listing orders", func(t *testing.T) {
+		s := &Service{
+			storer: &fakeStorer{err: fmt.Errorf("error listing orders")},
+		}
+
+		_, err := s.ListOrdersByUser(t.Context(), 7)
+
+		require.Error(t, err)
+	})
+}
+
 func TestDeleteOrder(t *testing.T) {
 	tcs := []struct {
 		name string

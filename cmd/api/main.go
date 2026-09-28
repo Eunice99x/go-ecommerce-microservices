@@ -59,7 +59,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr(),
-		Handler:           handler.RegisterRoutes(hld),
+		Handler:           handler.RegisterRoutes(hld, tokenGen),
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,

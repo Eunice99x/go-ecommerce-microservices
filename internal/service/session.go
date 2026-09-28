@@ -76,6 +76,7 @@ func (s *Service) RenewAccessToken(ctx context.Context, refreshToken string) (st
 		claims.ID,
 		claims.Email,
 		claims.IsAdmin,
+		session.ID,
 	)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf(

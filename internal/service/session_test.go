@@ -229,6 +229,7 @@ func TestRenewAccessToken(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, u.ID, claims.ID)
 				require.Equal(t, u.Email, claims.Email)
+				require.Equal(t, session.ID, claims.SessionID)
 			},
 		},
 		{
@@ -249,7 +250,7 @@ func TestRenewAccessToken(t *testing.T) {
 			test: func(t *testing.T) {
 				tokenGen := auth.DefaultJWTConfig("secret")
 
-				accessToken, err := tokenGen.GenerateAccessToken(u.ID, u.Email, u.IsAdmin)
+				accessToken, err := tokenGen.GenerateAccessToken(u.ID, u.Email, u.IsAdmin, "session-id")
 				require.NoError(t, err)
 
 				s := &Service{

@@ -49,6 +49,10 @@ func (s *Service) ListOrders(ctx context.Context) ([]*model.Order, error) {
 	return s.storer.ListOrders(ctx)
 }
 
+func (s *Service) ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error) {
+	return s.storer.ListOrdersByUser(ctx, userID)
+}
+
 // will do it later after adding noti
 // func (s *Service) UpdateOrder(ctx context.Context, p *model.Order) (*model.Order, error) {
 // 	return s.storer.UpdateOrder(ctx, p)

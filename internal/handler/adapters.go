@@ -18,6 +18,7 @@ type Services interface {
 	CreateOrder(ctx context.Context, o *model.Order) (*model.Order, error)
 	GetOrder(ctx context.Context, id int64) (*model.Order, error)
 	ListOrders(ctx context.Context) ([]*model.Order, error)
+	ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error)
 	DeleteOrder(ctx context.Context, id int64) error
 
 	CreateUser(ctx context.Context, u *model.User) (*model.User, error)
@@ -28,6 +29,7 @@ type Services interface {
 
 	LoginUser(ctx context.Context, email, password string) (*service.LoginResult, error)
 	RenewAccessToken(ctx context.Context, refreshToken string) (string, time.Time, error)
+	GetSession(ctx context.Context, id string) (*model.Session, error)
 	RevokeSession(ctx context.Context, id string) error
 	DeleteSession(ctx context.Context, id string) error
 }

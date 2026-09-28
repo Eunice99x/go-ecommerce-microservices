@@ -18,6 +18,7 @@ type Storer interface {
 	CreateOrder(ctx context.Context, o *model.Order) (*model.Order, error)
 	GetOrder(ctx context.Context, id int64) (*model.Order, error)
 	ListOrders(ctx context.Context) ([]*model.Order, error)
+	ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error)
 	DeleteOrder(ctx context.Context, id int64) error
 
 	// users

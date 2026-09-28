@@ -2,9 +2,11 @@ package handler
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/eunice99x/goMicro/internal/model"
+	"github.com/eunice99x/goMicro/internal/pkg/auth"
 	"github.com/eunice99x/goMicro/internal/service"
 )
 
@@ -14,6 +16,7 @@ type fakeService struct {
 	order       *model.Order
 	orders      []*model.Order
 	user        *model.User
+	session     *model.Session
 	users       []*model.User
 	loginResult *service.LoginResult
 	accessToken string
@@ -22,6 +25,17 @@ type fakeService struct {
 
 	// set to fail only the update call while the preceding get still succeeds
 	updateErr error
+	// same idea for delete/revoke calls that are preceded by an ownership lookup
+	deleteErr error
+	revokeErr error
+}
+
+// testClaims is the logged-in (non-admin) user used by handler tests
+var testClaims = &auth.Claims{ID: 1, Email: "younes@example.com"}
+
+// withClaims simulates the auth middleware having run
+func withClaims(r *http.Request, c *auth.Claims) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), authKey{}, c))
 }
 
 func (f *fakeService) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
@@ -62,7 +76,15 @@ func (f *fakeService) ListOrders(ctx context.Context) ([]*model.Order, error) {
 	return f.orders, f.err
 }
 
+func (f *fakeService) ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error) {
+	return f.orders, f.err
+}
+
 func (f *fakeService) DeleteOrder(ctx context.Context, id int64) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+
 	return f.err
 }
 
@@ -101,10 +123,22 @@ func (f *fakeService) RenewAccessToken(ctx context.Context, refreshToken string)
 	return f.accessToken, f.expiresAt, f.err
 }
 
+func (f *fakeService) GetSession(ctx context.Context, id string) (*model.Session, error) {
+	return f.session, f.err
+}
+
 func (f *fakeService) RevokeSession(ctx context.Context, id string) error {
+	if f.revokeErr != nil {
+		return f.revokeErr
+	}
+
 	return f.err
 }
 
 func (f *fakeService) DeleteSession(ctx context.Context, id string) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+
 	return f.err
 }

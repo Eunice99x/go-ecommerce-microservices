@@ -28,6 +28,8 @@ type Claims struct {
 	Email     string `json:"email"`
 	IsAdmin   bool   `json:"is_admin"`
 	TokenType string `json:"token_type"`
+	// SessionID links an access token to its login session (the refresh token's ID)
+	SessionID string `json:"sid,omitempty"`
 
 	jwt.RegisteredClaims
 }
@@ -37,6 +39,7 @@ type tokenClaims struct {
 	Email     string
 	IsAdmin   bool
 	TokenType string
+	SessionID string
 	Expiry    time.Duration
 }
 
@@ -49,12 +52,13 @@ func DefaultJWTConfig(secretKey string) *JWTConfig {
 	}
 }
 
-func (c *JWTConfig) GenerateAccessToken(id int64, email string, isAdmin bool) (string, error) {
+func (c *JWTConfig) GenerateAccessToken(id int64, email string, isAdmin bool, sessionID string) (string, error) {
 	return c.generateToken(tokenClaims{
 		ID:        id,
 		Email:     email,
 		IsAdmin:   isAdmin,
 		TokenType: "access",
+		SessionID: sessionID,
 		Expiry:    c.AccessTokenExpiry,
 	})
 }
@@ -82,6 +86,7 @@ func (c *JWTConfig) generateToken(tc tokenClaims) (string, error) {
 		Email:     tc.Email,
 		IsAdmin:   tc.IsAdmin,
 		TokenType: tc.TokenType,
+		SessionID: tc.SessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        tokenID.String(),
 			Issuer:    c.Issuer,

@@ -27,7 +27,7 @@ func TestGenerateAccessToken(t *testing.T) {
 			test: func(t *testing.T) {
 				c := DefaultJWTConfig("secret")
 
-				token, err := c.GenerateAccessToken(1, "younes@example.com", true)
+				token, err := c.GenerateAccessToken(1, "younes@example.com", true, "session-id")
 
 				require.NoError(t, err)
 				require.NotEmpty(t, token)
@@ -39,6 +39,7 @@ func TestGenerateAccessToken(t *testing.T) {
 				require.Equal(t, "younes@example.com", claims.Email)
 				require.True(t, claims.IsAdmin)
 				require.Equal(t, "access", claims.TokenType)
+				require.Equal(t, "session-id", claims.SessionID)
 				require.Equal(t, "go-ecommerce", claims.Issuer)
 				require.Equal(t, "younes@example.com", claims.Subject)
 				require.NotEmpty(t, claims.RegisteredClaims.ID)
@@ -55,10 +56,10 @@ func TestGenerateAccessToken(t *testing.T) {
 			test: func(t *testing.T) {
 				c := DefaultJWTConfig("secret")
 
-				first, err := c.GenerateAccessToken(1, "younes@example.com", false)
+				first, err := c.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
-				second, err := c.GenerateAccessToken(1, "younes@example.com", false)
+				second, err := c.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
 				firstClaims, err := c.ValidateToken(first, "access")
@@ -116,7 +117,7 @@ func TestValidateToken(t *testing.T) {
 			test: func(t *testing.T) {
 				c := DefaultJWTConfig("secret")
 
-				token, err := c.GenerateAccessToken(1, "younes@example.com", false)
+				token, err := c.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
 				claims, err := c.ValidateToken(token, "access")
@@ -130,7 +131,7 @@ func TestValidateToken(t *testing.T) {
 			test: func(t *testing.T) {
 				c := DefaultJWTConfig("secret")
 
-				token, err := c.GenerateAccessToken(1, "younes@example.com", false)
+				token, err := c.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
 				claims, err := c.ValidateToken("Bearer "+token, "access")
@@ -144,7 +145,7 @@ func TestValidateToken(t *testing.T) {
 			test: func(t *testing.T) {
 				c := DefaultJWTConfig("secret")
 
-				token, err := c.GenerateAccessToken(1, "younes@example.com", false)
+				token, err := c.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
 				claims, err := c.ValidateToken("Bearer  "+token+"  ", "access")
@@ -182,7 +183,7 @@ func TestValidateToken(t *testing.T) {
 					Issuer:            "go-ecommerce",
 				}
 
-				token, err := c.GenerateAccessToken(1, "younes@example.com", false)
+				token, err := c.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
 				_, err = c.ValidateToken(token, "access")
@@ -195,7 +196,7 @@ func TestValidateToken(t *testing.T) {
 			test: func(t *testing.T) {
 				signer := DefaultJWTConfig("another-secret")
 
-				token, err := signer.GenerateAccessToken(1, "younes@example.com", false)
+				token, err := signer.GenerateAccessToken(1, "younes@example.com", false, "session-id")
 				require.NoError(t, err)
 
 				verifier := DefaultJWTConfig("secret")

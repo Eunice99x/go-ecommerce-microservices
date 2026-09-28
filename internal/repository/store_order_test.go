@@ -41,6 +41,7 @@ func TestCreateOrder(t *testing.T) {
 		TaxPrice:      22.2,
 		ShippingPrice: 100,
 		TotalPrice:    122.2,
+		UserID:        1,
 		Items:         []model.OrderItem{oi},
 	}
 
@@ -59,7 +60,7 @@ func TestCreateOrder(t *testing.T) {
 				oiRows := sqlmock.NewRows([]string{"id"}).
 					AddRow(1)
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnRows(oRows)
 
 				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnRows(oiRows)
 
@@ -81,7 +82,7 @@ func TestCreateOrder(t *testing.T) {
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				s.ExpectBegin()
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnError(fmt.Errorf("error inserting order"))
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnError(fmt.Errorf("error inserting order"))
 
 				s.ExpectRollback()
 
@@ -99,7 +100,7 @@ func TestCreateOrder(t *testing.T) {
 
 				oRows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price) VALUES ($1, $2, $3, $4) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice).WillReturnRows(oRows)
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnRows(oRows)
 
 				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnError(fmt.Errorf("error inserting order item"))
 
@@ -281,6 +282,78 @@ func TestListOrders(t *testing.T) {
 				s.ExpectQuery("SELECT * FROM order_items WHERE order_id=$1").WithArgs(1).WillReturnError(fmt.Errorf("error getting order items"))
 
 				_, err := ps.ListOrders(context.Background())
+
+				require.Error(t, err)
+
+				err = s.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			withTestDB(t, func(db *sqlx.DB, s sqlmock.Sqlmock) {
+				n := NewPostgresStorer(db)
+				tc.test(t, n, s)
+			})
+		})
+	}
+}
+
+func TestListOrdersByUser(t *testing.T) {
+	cols := []string{"id", "payment_method", "tax_price", "shipping_price", "total_price", "user_id", "created_at", "updated_at"}
+	itemCols := []string{"id", "name", "quantity", "image", "price", "product_id", "order_id"}
+
+	tcs := []struct {
+		name string
+		test func(*testing.T, *PostgresStorer, sqlmock.Sqlmock)
+	}{
+		{
+			name: "success",
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
+				rows := s.NewRows(cols).
+					AddRow(1, "cash", 22.2, 100.0, 122.2, 7, time.Now(), nil).
+					AddRow(2, "card", 22.2, 100.0, 122.2, 7, time.Now(), nil)
+
+				s.ExpectQuery("SELECT * FROM orders WHERE user_id=$1").WithArgs(7).WillReturnRows(rows)
+
+				for _, orderID := range []int64{1, 2} {
+					oiRows := s.NewRows(itemCols).AddRow(1, "iphone", 1, "www.example.com", 1111, 1, orderID)
+					s.ExpectQuery("SELECT * FROM order_items WHERE order_id=$1").WithArgs(orderID).WillReturnRows(oiRows)
+				}
+
+				orders, err := ps.ListOrdersByUser(context.Background(), 7)
+				require.NoError(t, err)
+
+				require.Len(t, orders, 2)
+				require.Equal(t, int64(7), orders[0].UserID)
+				require.Len(t, orders[1].Items, 1)
+
+				err = s.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "user has no orders",
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
+				s.ExpectQuery("SELECT * FROM orders WHERE user_id=$1").WithArgs(7).WillReturnRows(s.NewRows(cols))
+
+				orders, err := ps.ListOrdersByUser(context.Background(), 7)
+
+				require.NoError(t, err)
+				require.Empty(t, orders)
+
+				err = s.ExpectationsWereMet()
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "error listing orders",
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
+				s.ExpectQuery("SELECT * FROM orders WHERE user_id=$1").WithArgs(7).WillReturnError(fmt.Errorf("error listing orders"))
+
+				_, err := ps.ListOrdersByUser(context.Background(), 7)
 
 				require.Error(t, err)
 

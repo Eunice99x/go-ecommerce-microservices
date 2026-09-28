@@ -65,15 +65,6 @@ func (s *Service) LoginUser(ctx context.Context, email, password string) (*Login
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
-	accessToken, err := s.tokenGen.GenerateAccessToken(
-		user.ID,
-		user.Email,
-		user.IsAdmin,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error generating access token: %w", err)
-	}
-
 	refreshToken, err := s.tokenGen.GenerateRefreshToken(
 		user.ID,
 		user.Email,
@@ -86,6 +77,17 @@ func (s *Service) LoginUser(ctx context.Context, email, password string) (*Login
 	refreshClaims, err := s.tokenGen.ValidateToken(refreshToken, "refresh")
 	if err != nil {
 		return nil, fmt.Errorf("error validating refresh token: %w", err)
+	}
+
+	// the refresh token's ID doubles as the session ID, embed it so logout can find the session
+	accessToken, err := s.tokenGen.GenerateAccessToken(
+		user.ID,
+		user.Email,
+		user.IsAdmin,
+		refreshClaims.RegisteredClaims.ID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error generating access token: %w", err)
 	}
 
 	now := time.Now()

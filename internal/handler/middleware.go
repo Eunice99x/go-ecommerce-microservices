@@ -46,6 +46,11 @@ func GetAdminMiddlewareFunc(genToken *auth.JWTConfig) func(http.Handler) http.Ha
 	}
 }
 
+func claimsFromContext(ctx context.Context) (*auth.Claims, bool) {
+	claims, ok := ctx.Value(authKey{}).(*auth.Claims)
+	return claims, ok && claims != nil
+}
+
 func verifyClaimsFromAuthHeader(r *http.Request, genToken *auth.JWTConfig) (*auth.Claims, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {

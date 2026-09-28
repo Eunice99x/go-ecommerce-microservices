@@ -60,6 +60,7 @@ func TestCreateOrder(t *testing.T) {
 
 				req.Header.Set("Content-Type", "application/json")
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -95,6 +96,7 @@ func TestCreateOrder(t *testing.T) {
 					bytes.NewReader([]byte(`{"items":`)),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -125,6 +127,7 @@ func TestCreateOrder(t *testing.T) {
 					bytes.NewReader(body),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -159,6 +162,7 @@ func TestGetOrder(t *testing.T) {
 			test: func(t *testing.T) {
 				order := &model.Order{
 					ID:            1,
+					UserID:        testClaims.ID,
 					PaymentMethod: "cash",
 					TotalPrice:    999,
 					Items: []model.OrderItem{
@@ -182,6 +186,7 @@ func TestGetOrder(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -206,6 +211,30 @@ func TestGetOrder(t *testing.T) {
 			},
 		},
 		{
+			name: "order belongs to another user",
+			test: func(t *testing.T) {
+				req := httptest.NewRequest(http.MethodGet, "/orders/1", nil)
+
+				rctx := chi.NewRouteContext()
+				rctx.URLParams.Add("id", "1")
+
+				req = req.WithContext(
+					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
+				)
+
+				req = withClaims(req, testClaims)
+				rec := httptest.NewRecorder()
+
+				h := &Handler{
+					service: &fakeService{order: &model.Order{ID: 1, UserID: 2}},
+				}
+
+				h.GetOrder(rec, req)
+
+				require.Equal(t, http.StatusNotFound, rec.Code)
+			},
+		},
+		{
 			name: "invalid order id",
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(http.MethodGet, "/orders/abc", nil)
@@ -217,6 +246,7 @@ func TestGetOrder(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -240,6 +270,7 @@ func TestGetOrder(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -338,6 +369,62 @@ func TestListOrders(t *testing.T) {
 	}
 }
 
+func TestListMyOrders(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/orders/me", nil)
+		req = withClaims(req, testClaims)
+		rec := httptest.NewRecorder()
+
+		h := &Handler{
+			service: &fakeService{orders: []*model.Order{{ID: 1, UserID: testClaims.ID}}},
+		}
+
+		h.ListMyOrders(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+
+		var res []dto.OrderRes
+		require.NoError(t, json.NewDecoder(rec.Body).Decode(&res))
+		require.Len(t, res, 1)
+	})
+
+	t.Run("no orders returns empty list", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/orders/me", nil)
+		req = withClaims(req, testClaims)
+		rec := httptest.NewRecorder()
+
+		h := &Handler{service: &fakeService{}}
+
+		h.ListMyOrders(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		require.JSONEq(t, "[]", rec.Body.String())
+	})
+
+	t.Run("unauthenticated", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/orders/me", nil)
+		rec := httptest.NewRecorder()
+
+		h := &Handler{service: &fakeService{}}
+
+		h.ListMyOrders(rec, req)
+
+		require.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+
+	t.Run("failed listing orders", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/orders/me", nil)
+		req = withClaims(req, testClaims)
+		rec := httptest.NewRecorder()
+
+		h := &Handler{service: &fakeService{err: fmt.Errorf("error listing orders")}}
+
+		h.ListMyOrders(rec, req)
+
+		require.Equal(t, http.StatusInternalServerError, rec.Code)
+	})
+}
+
 func TestDeleteOrder(t *testing.T) {
 	tcs := []struct {
 		name string
@@ -355,10 +442,11 @@ func TestDeleteOrder(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
-					service: &fakeService{},
+					service: &fakeService{order: &model.Order{ID: 1, UserID: testClaims.ID}},
 				}
 
 				h.DeleteOrder(rec, req)
@@ -378,6 +466,7 @@ func TestDeleteOrder(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -401,10 +490,12 @@ func TestDeleteOrder(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
-					err: fmt.Errorf("error deleting order"),
+					order:     &model.Order{ID: 1, UserID: testClaims.ID},
+					deleteErr: fmt.Errorf("error deleting order"),
 				}
 
 				h := &Handler{

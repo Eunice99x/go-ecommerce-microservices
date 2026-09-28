@@ -12,6 +12,7 @@ import (
 
 	"github.com/eunice99x/goMicro/internal/handler/dto"
 	"github.com/eunice99x/goMicro/internal/model"
+	"github.com/eunice99x/goMicro/internal/pkg/auth"
 	"github.com/eunice99x/goMicro/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
@@ -139,10 +140,11 @@ func TestGetUser(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodGet,
-					"/users/user?email=younes@example.com",
+					"/users/user",
 					nil,
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -167,7 +169,7 @@ func TestGetUser(t *testing.T) {
 			},
 		},
 		{
-			name: "missing email",
+			name: "unauthenticated",
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(http.MethodGet, "/users/user", nil)
 				rec := httptest.NewRecorder()
@@ -178,7 +180,7 @@ func TestGetUser(t *testing.T) {
 
 				h.GetUser(rec, req)
 
-				require.Equal(t, http.StatusBadRequest, rec.Code)
+				require.Equal(t, http.StatusUnauthorized, rec.Code)
 			},
 		},
 		{
@@ -186,10 +188,11 @@ func TestGetUser(t *testing.T) {
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(
 					http.MethodGet,
-					"/users/user?email=younes@example.com",
+					"/users/user",
 					nil,
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -311,12 +314,13 @@ func TestUpdateUser(t *testing.T) {
 
 				req := httptest.NewRequest(
 					http.MethodPatch,
-					"/users/user?email=younes@example.com",
+					"/users/user",
 					bytes.NewReader(body),
 				)
 
 				req.Header.Set("Content-Type", "application/json")
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -342,7 +346,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 		},
 		{
-			name: "missing email",
+			name: "unauthenticated",
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(
 					http.MethodPatch,
@@ -358,7 +362,7 @@ func TestUpdateUser(t *testing.T) {
 
 				h.UpdateUser(rec, req)
 
-				require.Equal(t, http.StatusBadRequest, rec.Code)
+				require.Equal(t, http.StatusUnauthorized, rec.Code)
 			},
 		},
 		{
@@ -366,10 +370,11 @@ func TestUpdateUser(t *testing.T) {
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(
 					http.MethodPatch,
-					"/users/user?email=younes@example.com",
+					"/users/user",
 					bytes.NewReader([]byte(`{"name":`)),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -386,10 +391,11 @@ func TestUpdateUser(t *testing.T) {
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(
 					http.MethodPatch,
-					"/users/user?email=younes@example.com",
+					"/users/user",
 					bytes.NewReader([]byte(`{"name":"Updated Younes"}`)),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -410,10 +416,11 @@ func TestUpdateUser(t *testing.T) {
 			test: func(t *testing.T) {
 				req := httptest.NewRequest(
 					http.MethodPatch,
-					"/users/user?email=younes@example.com",
+					"/users/user",
 					bytes.NewReader([]byte(`{"name":"Updated Younes"}`)),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
@@ -637,6 +644,9 @@ func TestLoginUser(t *testing.T) {
 }
 
 func TestLogoutUser(t *testing.T) {
+	// logout reads the session from the access token's sid claim
+	claims := &auth.Claims{ID: 1, Email: "younes@example.com", SessionID: "session-id"}
+
 	tcs := []struct {
 		name string
 		test func(*testing.T)
@@ -644,15 +654,8 @@ func TestLogoutUser(t *testing.T) {
 		{
 			name: "success",
 			test: func(t *testing.T) {
-				req := httptest.NewRequest(http.MethodDelete, "/logout/session-id", nil)
-
-				rctx := chi.NewRouteContext()
-				rctx.URLParams.Add("id", "session-id")
-
-				req = req.WithContext(
-					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
-				)
-
+				req := httptest.NewRequest(http.MethodDelete, "/logout", nil)
+				req = withClaims(req, claims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -665,16 +668,10 @@ func TestLogoutUser(t *testing.T) {
 			},
 		},
 		{
-			name: "missing session id",
+			name: "token without session id",
 			test: func(t *testing.T) {
-				req := httptest.NewRequest(http.MethodDelete, "/logout/", nil)
-
-				rctx := chi.NewRouteContext()
-
-				req = req.WithContext(
-					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
-				)
-
+				req := httptest.NewRequest(http.MethodDelete, "/logout", nil)
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -683,29 +680,18 @@ func TestLogoutUser(t *testing.T) {
 
 				h.LogoutUser(rec, req)
 
-				require.Equal(t, http.StatusBadRequest, rec.Code)
+				require.Equal(t, http.StatusUnauthorized, rec.Code)
 			},
 		},
 		{
 			name: "failed deleting session",
 			test: func(t *testing.T) {
-				req := httptest.NewRequest(http.MethodDelete, "/logout/session-id", nil)
-
-				rctx := chi.NewRouteContext()
-				rctx.URLParams.Add("id", "session-id")
-
-				req = req.WithContext(
-					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
-				)
-
+				req := httptest.NewRequest(http.MethodDelete, "/logout", nil)
+				req = withClaims(req, claims)
 				rec := httptest.NewRecorder()
 
-				fakeS := fakeService{
-					err: fmt.Errorf("error deleting session"),
-				}
-
 				h := &Handler{
-					service: &fakeS,
+					service: &fakeService{deleteErr: fmt.Errorf("error deleting session")},
 				}
 
 				h.LogoutUser(rec, req)
@@ -838,10 +824,11 @@ func TestRevokeSession(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
-					service: &fakeService{},
+					service: &fakeService{session: &model.Session{ID: "session-id", UserEmail: testClaims.Email}},
 				}
 
 				h.RevokeSession(rec, req)
@@ -860,6 +847,7 @@ func TestRevokeSession(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				h := &Handler{
@@ -887,10 +875,12 @@ func TestRevokeSession(t *testing.T) {
 					context.WithValue(req.Context(), chi.RouteCtxKey, rctx),
 				)
 
+				req = withClaims(req, testClaims)
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
-					err: fmt.Errorf("error revoking session"),
+					session:   &model.Session{ID: "session-id", UserEmail: testClaims.Email},
+					revokeErr: fmt.Errorf("error revoking session"),
 				}
 
 				h := &Handler{

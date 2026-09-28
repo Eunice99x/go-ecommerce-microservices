@@ -75,10 +75,16 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
-	email := r.URL.Query().Get("email")
-	if email == "" {
-		http.Error(w, "email is required", http.StatusBadRequest)
+	claims, ok := claimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
+	}
+
+	// users get themselves, admins may look up anyone by ?email=
+	email := claims.Email
+	if q := r.URL.Query().Get("email"); q != "" && claims.IsAdmin {
+		email = q
 	}
 
 	user, err := h.service.GetUser(r.Context(), email)
@@ -121,12 +127,6 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	email := r.URL.Query().Get("email")
-	if email == "" {
-		http.Error(w, "email is required", http.StatusBadRequest)
-		return
-	}
-
 	var req dto.UserReq
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -134,13 +134,22 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.service.GetUser(r.Context(), email)
+	claims, ok := claimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	u, err := h.service.GetUser(r.Context(), claims.Email)
 	if err != nil {
 		http.Error(w, "error getting user", http.StatusInternalServerError)
 		return
 	}
 
 	patchUserReq(u, req)
+	if u.Email == "" {
+		u.Email = claims.Email
+	}
 
 	updated, err := h.service.UpdateUser(r.Context(), u)
 	if err != nil {
@@ -209,13 +218,13 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) LogoutUser(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	if id == "" {
-		http.Error(w, "session id is required", http.StatusBadRequest)
+	claims, ok := claimsFromContext(r.Context())
+	if !ok || claims.SessionID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	if err := h.service.DeleteSession(r.Context(), id); err != nil {
+	if err := h.service.DeleteSession(r.Context(), claims.SessionID); err != nil {
 		http.Error(w, "error deleting session", http.StatusInternalServerError)
 		return
 	}
@@ -258,10 +267,36 @@ func (h *Handler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !h.ownsSession(w, r, id) {
+		return
+	}
+
 	if err := h.service.RevokeSession(r.Context(), id); err != nil {
 		http.Error(w, "error revoking session", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ownsSession writes an error response and returns false unless the caller owns the session (or is an admin)
+func (h *Handler) ownsSession(w http.ResponseWriter, r *http.Request, id string) bool {
+	claims, ok := claimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return false
+	}
+
+	session, err := h.service.GetSession(r.Context(), id)
+	if err != nil {
+		http.Error(w, "session not found", http.StatusNotFound)
+		return false
+	}
+
+	if !claims.IsAdmin && session.UserEmail != claims.Email {
+		http.Error(w, "session not found", http.StatusNotFound)
+		return false
+	}
+
+	return true
 }

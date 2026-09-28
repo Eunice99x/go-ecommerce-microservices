@@ -58,9 +58,9 @@ func createOrderItem(ctx context.Context, tx *sqlx.Tx, oi *model.OrderItem) erro
 	return nil
 }
 
-func (ps *PostgresStorer) GetOrder(ctx context.Context, userID int64) (*model.Order, error) {
+func (ps *PostgresStorer) GetOrder(ctx context.Context, id int64) (*model.Order, error) {
 	var o model.Order
-	err := ps.db.GetContext(ctx, &o, "SELECT * FROM orders WHERE user_id=$1", userID)
+	err := ps.db.GetContext(ctx, &o, "SELECT * FROM orders WHERE id=$1", id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting order: %w", err)
 	}
@@ -82,18 +82,39 @@ func (ps *PostgresStorer) ListOrders(ctx context.Context) ([]*model.Order, error
 		return nil, fmt.Errorf("error listing orders: %w", err)
 	}
 
+	if err := ps.loadOrderItems(ctx, orders); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (ps *PostgresStorer) ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error) {
+	var orders []*model.Order
+	err := ps.db.SelectContext(ctx, &orders, "SELECT * FROM orders WHERE user_id=$1", userID)
+	if err != nil {
+		return nil, fmt.Errorf("error listing user orders: %w", err)
+	}
+
+	if err := ps.loadOrderItems(ctx, orders); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+func (ps *PostgresStorer) loadOrderItems(ctx context.Context, orders []*model.Order) error {
 	for i := range orders {
 		var items []model.OrderItem
 
-		err = ps.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=$1", orders[i].ID)
-
+		err := ps.db.SelectContext(ctx, &items, "SELECT * FROM order_items WHERE order_id=$1", orders[i].ID)
 		if err != nil {
-			return nil, fmt.Errorf("error getting order items: %w", err)
+			return fmt.Errorf("error getting order items: %w", err)
 		}
 		orders[i].Items = items
 	}
 
-	return orders, nil
+	return nil
 }
 
 // Update order status (later)

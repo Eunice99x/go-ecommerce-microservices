@@ -54,6 +54,10 @@ func (f *fakeStorer) ListOrders(ctx context.Context) ([]*model.Order, error) {
 	return f.orders, f.err
 }
 
+func (f *fakeStorer) ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error) {
+	return f.orders, f.err
+}
+
 func (f *fakeStorer) DeleteOrder(ctx context.Context, id int64) error {
 	return f.err
 }
