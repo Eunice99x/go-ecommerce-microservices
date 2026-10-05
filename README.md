@@ -9,7 +9,6 @@ An e-commerce backend built with **Go**, using a microservices architecture.
 - gRPC
 - Protocol Buffers
 - Docker
-- Kubernetes
 
 ## Architecture
 
@@ -41,6 +40,27 @@ make down
 
 To run the services with `go run` instead, start Postgres (`make db-up && make migrate-up`), then `make grpc-run`, `make go-run` and `make notifier-run` in separate terminals.
 
+## API
+
+| Method | Path | Access |
+|---|---|---|
+| POST | `/users` | public (sign up) |
+| POST | `/login` | public |
+| POST | `/refresh` | public (refresh token) |
+| DELETE | `/logout` | user |
+| PATCH | `/sessions/{id}/revoke` | user (own sessions) |
+| GET / PATCH | `/users/user` | user (self) |
+| GET | `/users` | admin |
+| DELETE | `/users/{id}` | admin |
+| GET | `/products`, `/products/{id}` | public |
+| POST | `/products` | admin |
+| PATCH / DELETE | `/products/{id}` | admin |
+| POST | `/orders` | user |
+| GET | `/orders/me` | user |
+| GET / DELETE | `/orders/{id}` | owner or admin |
+| GET | `/orders` | admin |
+| PATCH | `/orders/{id}/status` | admin (emails the customer) |
+
 ## Status
 
-Work in progress.
+Feature complete. Next: Kubernetes manifests, integration tests against a real Postgres.
