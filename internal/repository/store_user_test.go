@@ -229,7 +229,7 @@ func TestUpdateUser(t *testing.T) {
 					SET
 						name=$1,
 						email=$2,
-						password=$3,
+						password=COALESCE(NULLIF($3, ''), password),
 						is_admin=$4,
 						updated_at=$5
 					WHERE id=$6
@@ -260,7 +260,7 @@ func TestUpdateUser(t *testing.T) {
 					SET
 						name=$1,
 						email=$2,
-						password=$3,
+						password=COALESCE(NULLIF($3, ''), password),
 						is_admin=$4,
 						updated_at=$5
 					WHERE id=$6

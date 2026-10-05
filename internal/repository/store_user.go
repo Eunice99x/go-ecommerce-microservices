@@ -40,13 +40,15 @@ func (ps *PostgresStorer) ListUsers(ctx context.Context) ([]*model.User, error) 
 	return users, nil
 }
 
+// UpdateUser keeps the stored password hash when u.Password is empty,
+// since callers outside the server never see the hash
 func (ps *PostgresStorer) UpdateUser(ctx context.Context, u *model.User) (*model.User, error) {
 	query := `
 		UPDATE users
 		SET
 			name=$1,
 			email=$2,
-			password=$3,
+			password=COALESCE(NULLIF($3, ''), password),
 			is_admin=$4,
 			updated_at=$5
 		WHERE id=$6

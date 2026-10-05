@@ -11,16 +11,13 @@ import (
 	"syscall"
 
 	"github.com/eunice99x/goMicro/cmd/config"
-	"github.com/eunice99x/goMicro/db"
+	"github.com/eunice99x/goMicro/grpc/client"
 	"github.com/eunice99x/goMicro/grpc/pb"
 	"github.com/eunice99x/goMicro/internal/handler"
 	"github.com/eunice99x/goMicro/internal/pkg/auth"
-	"github.com/eunice99x/goMicro/internal/repository"
-	"github.com/eunice99x/goMicro/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
-
 
 func main() {
 	if err := run(); err != nil {
@@ -34,35 +31,24 @@ func run() error {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	database, err := db.NewDatabase(cfg.DSN())
-	if err != nil {
-		return fmt.Errorf("error opening db: %w", err)
-	}
-	defer func() {
-		if err := database.Close(); err != nil {
-			log.Printf("error closing database: %v", err)
-		}
-	}()
-
-	log.Println("successfully connected to database")
-
 	tokenGen := auth.DefaultJWTConfig(cfg.SecretKey)
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
+	// the API no longer talks to Postgres; all data goes through the gRPC server
 	conn, err := grpc.NewClient(cfg.GRPCAddr(), opts...)
 	if err != nil {
-		log.Fatalf("failed to connect to server: %v", err)
+		return fmt.Errorf("failed to create grpc client: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("error closing grpc connection: %v", err)
+		}
+	}()
 
-	client := pb.NewEcommClient(conn)
-
-	store := repository.NewPostgresStorer(database.GetDB())
-	svc := service.NewService(store, tokenGen)
-	hld := handler.NewHandler(svc)
+	hld := handler.NewHandler(client.New(pb.NewEcommClient(conn)))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr(),

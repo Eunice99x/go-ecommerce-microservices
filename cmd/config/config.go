@@ -19,11 +19,10 @@ const (
 	ShutdownTimeout   = 15 * time.Second
 )
 
-
 type Config struct {
 	AppEnv     string `mapstructure:"APP_ENV"`
 	ServerPort string `mapstructure:"SERVER_PORT"`
-	GRPCPort string `mapstructure: "GRPC_PORT"`
+	GRPCPort   string `mapstructure:"GRPC_PORT"`
 
 	DBHost     string `mapstructure:"DB_HOST"`
 	DBPort     string `mapstructure:"DB_PORT"`
@@ -104,7 +103,6 @@ func (c *Config) validate() error {
 		return fmt.Errorf("DB_HOST, DB_USER and DB_NAME are required")
 	}
 
-	
 	if c.GRPCPort == "" {
 		return fmt.Errorf("GRPC_PORT is required")
 	}

@@ -110,6 +110,30 @@ message SessionRes {
     google.protobuf.Timestamp expires_at = 6;
 }
 
+// passwords are only ever sent inbound; credential checks happen on the server
+message LoginUserReq {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginUserRes {
+    UserRes user = 1;
+    string session_id = 2;
+    string access_token = 3;
+    string refresh_token = 4;
+    google.protobuf.Timestamp access_token_expires_at = 5;
+    google.protobuf.Timestamp refresh_token_expires_at = 6;
+}
+
+message RenewAccessTokenReq {
+    string refresh_token = 1;
+}
+
+message RenewAccessTokenRes {
+    string access_token = 1;
+    google.protobuf.Timestamp access_token_expires_at = 2;
+}
+
 service Ecomm {
     rpc CreateProduct(ProductReq) returns (ProductRes) {}
     rpc GetProduct(ProductReq) returns (ProductRes) {}
@@ -132,4 +156,7 @@ service Ecomm {
     rpc GetSession(SessionReq) returns (SessionRes) {}
     rpc RevokeSession(SessionReq) returns (SessionRes) {}
     rpc DeleteSession(SessionReq) returns (SessionRes) {}
+
+    rpc LoginUser(LoginUserReq) returns (LoginUserRes) {}
+    rpc RenewAccessToken(RenewAccessTokenReq) returns (RenewAccessTokenRes) {}
 }

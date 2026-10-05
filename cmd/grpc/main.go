@@ -7,18 +7,19 @@ import (
 	"github.com/eunice99x/goMicro/cmd/config"
 	"github.com/eunice99x/goMicro/db"
 	"github.com/eunice99x/goMicro/grpc/pb"
-	"github.com/eunice99x/goMicro/grpc/service"
+	"github.com/eunice99x/goMicro/grpc/server"
+	"github.com/eunice99x/goMicro/internal/pkg/auth"
 	"github.com/eunice99x/goMicro/internal/repository"
+	"github.com/eunice99x/goMicro/internal/service"
 	"google.golang.org/grpc"
 )
-
 
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Panicf("failed to load configuration: %v", err)
 	}
-	
+
 	database, err := db.NewDatabase(cfg.DSN())
 	if err != nil {
 		log.Panicf("error opening db: %v", err)
@@ -29,12 +30,16 @@ func main() {
 		}
 	}()
 
+	// token issuing lives with the service; the API only verifies tokens with the same key
+	tokenGen := auth.DefaultJWTConfig(cfg.SecretKey)
+
 	st := repository.NewPostgresStorer(database.GetDB())
-	srv := service.NewStorer(st)
+	svc := service.NewService(st, tokenGen)
+	srv := server.NewServer(svc)
 
 	grpcSrv := grpc.NewServer()
 	pb.RegisterEcommServer(grpcSrv, srv)
-	
+
 	listener, err := net.Listen("tcp", cfg.GRPCAddr())
 	if err != nil {
 		log.Fatalf("failed to listen on %s: %v", cfg.GRPCAddr(), err)
