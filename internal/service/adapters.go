@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/eunice99x/goMicro/internal/model"
 )
@@ -19,6 +20,7 @@ type Storer interface {
 	GetOrder(ctx context.Context, id int64) (*model.Order, error)
 	ListOrders(ctx context.Context) ([]*model.Order, error)
 	ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error)
+	UpdateOrderStatus(ctx context.Context, id int64, from, to model.OrderStatus) error
 	DeleteOrder(ctx context.Context, id int64) error
 
 	// users
@@ -27,6 +29,11 @@ type Storer interface {
 	ListUsers(ctx context.Context) ([]*model.User, error)
 	UpdateUser(ctx context.Context, u *model.User) (*model.User, error)
 	DeleteUser(ctx context.Context, id int64) error
+
+	// notifications
+	ClaimNotifications(ctx context.Context, limit int, lease time.Duration) ([]*model.Notification, error)
+	MarkNotificationSent(ctx context.Context, id int64) error
+	MarkNotificationFailed(ctx context.Context, id int64, reason string, maxAttempts int) error
 
 	// sessions
 	CreateSession(ctx context.Context, s *model.Session) (*model.Session, error)

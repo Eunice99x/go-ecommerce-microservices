@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"time"
 
@@ -23,6 +24,12 @@ type Config struct {
 	AppEnv     string `mapstructure:"APP_ENV"`
 	ServerPort string `mapstructure:"SERVER_PORT"`
 	GRPCPort   string `mapstructure:"GRPC_PORT"`
+	GRPCHost   string `mapstructure:"GRPC_HOST"`
+
+	// mtls between services, set all three or none
+	GRPCTLSCA   string `mapstructure:"GRPC_TLS_CA"`
+	GRPCTLSCert string `mapstructure:"GRPC_TLS_CERT"`
+	GRPCTLSKey  string `mapstructure:"GRPC_TLS_KEY"`
 
 	DBHost     string `mapstructure:"DB_HOST"`
 	DBPort     string `mapstructure:"DB_PORT"`
@@ -32,19 +39,37 @@ type Config struct {
 	DBSSLMode  string `mapstructure:"DB_SSLMODE"`
 
 	SecretKey string `mapstructure:"SECRET_KEY"`
+
+	// notifier, logs emails instead of sending when SMTP_HOST is empty
+	SMTPHost     string `mapstructure:"SMTP_HOST"`
+	SMTPPort     string `mapstructure:"SMTP_PORT"`
+	SMTPUsername string `mapstructure:"SMTP_USERNAME"`
+	SMTPPassword string `mapstructure:"SMTP_PASSWORD"`
+	SMTPFrom     string `mapstructure:"SMTP_FROM"`
 }
 
 var defaults = map[string]string{
 	"APP_ENV":     "development",
 	"SERVER_PORT": "3000",
 	"GRPC_PORT":   "50051",
-	"DB_HOST":     "localhost",
-	"DB_PORT":     "5433",
-	"DB_USER":     "postgres",
-	"DB_PASSWORD": "postgres",
-	"DB_NAME":     "ecomm",
-	"DB_SSLMODE":  "disable",
-	"SECRET_KEY":  "",
+	"GRPC_HOST":   "localhost",
+
+	"GRPC_TLS_CA":   "",
+	"GRPC_TLS_CERT": "",
+	"GRPC_TLS_KEY":  "",
+	"DB_HOST":       "localhost",
+	"DB_PORT":       "5433",
+	"DB_USER":       "postgres",
+	"DB_PASSWORD":   "postgres",
+	"DB_NAME":       "ecomm",
+	"DB_SSLMODE":    "disable",
+	"SECRET_KEY":    "",
+
+	"SMTP_HOST":     "",
+	"SMTP_PORT":     "587",
+	"SMTP_USERNAME": "",
+	"SMTP_PASSWORD": "",
+	"SMTP_FROM":     "",
 }
 
 func LoadConfig() (*Config, error) {
@@ -107,6 +132,16 @@ func (c *Config) validate() error {
 		return fmt.Errorf("GRPC_PORT is required")
 	}
 
+	anyTLS := c.GRPCTLSCA != "" || c.GRPCTLSCert != "" || c.GRPCTLSKey != ""
+	allTLS := c.GRPCTLSCA != "" && c.GRPCTLSCert != "" && c.GRPCTLSKey != ""
+	if anyTLS && !allTLS {
+		return fmt.Errorf("GRPC_TLS_CA, GRPC_TLS_CERT and GRPC_TLS_KEY must be set together")
+	}
+
+	if c.SMTPHost != "" && c.SMTPFrom == "" {
+		return fmt.Errorf("SMTP_FROM is required when SMTP_HOST is set")
+	}
+
 	return nil
 }
 
@@ -127,6 +162,12 @@ func (c *Config) Addr() string {
 	return ":" + c.ServerPort
 }
 
+// GRPCAddr is where the gRPC server listens
 func (c *Config) GRPCAddr() string {
 	return ":" + c.GRPCPort
+}
+
+// GRPCTarget is what clients (api, notifier) dial
+func (c *Config) GRPCTarget() string {
+	return net.JoinHostPort(c.GRPCHost, c.GRPCPort)
 }

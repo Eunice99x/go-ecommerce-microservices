@@ -432,3 +432,22 @@ func TestLoginUser(t *testing.T) {
 		})
 	}
 }
+
+func TestLoginUserDomainErrors(t *testing.T) {
+	t.Run("unknown email looks like a wrong password", func(t *testing.T) {
+		s := &Service{storer: &fakeStorer{err: fmt.Errorf("error getting user: %w", model.ErrNotFound)}}
+
+		_, err := s.LoginUser(t.Context(), "nobody@example.com", "secret123")
+
+		require.ErrorIs(t, err, model.ErrInvalidCredentials)
+	})
+
+	t.Run("storage failure is not reported as bad credentials", func(t *testing.T) {
+		s := &Service{storer: &fakeStorer{err: fmt.Errorf("connection reset")}}
+
+		_, err := s.LoginUser(t.Context(), "younes@example.com", "secret123")
+
+		require.Error(t, err)
+		require.NotErrorIs(t, err, model.ErrInvalidCredentials)
+	})
+}

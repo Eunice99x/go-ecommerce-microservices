@@ -80,6 +80,14 @@ func (f *fakeService) ListOrdersByUser(ctx context.Context, userID int64) ([]*mo
 	return f.orders, f.err
 }
 
+func (f *fakeService) UpdateOrderStatus(ctx context.Context, id int64, status model.OrderStatus) (*model.Order, error) {
+	if f.updateErr != nil {
+		return nil, f.updateErr
+	}
+
+	return f.order, f.err
+}
+
 func (f *fakeService) DeleteOrder(ctx context.Context, id int64) error {
 	if f.deleteErr != nil {
 		return f.deleteErr

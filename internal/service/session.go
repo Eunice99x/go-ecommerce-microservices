@@ -45,7 +45,7 @@ func (s *Service) DeleteSession(ctx context.Context, id string) error {
 func (s *Service) RenewAccessToken(ctx context.Context, refreshToken string) (string, time.Time, error) {
 	claims, err := s.tokenGen.ValidateToken(refreshToken, "refresh")
 	if err != nil {
-		return "", time.Time{}, fmt.Errorf("invalid refresh token: %w", err)
+		return "", time.Time{}, fmt.Errorf("%w: invalid refresh token: %w", model.ErrInvalidCredentials, err)
 	}
 
 	session, err := s.storer.GetSession(
@@ -57,19 +57,19 @@ func (s *Service) RenewAccessToken(ctx context.Context, refreshToken string) (st
 	}
 
 	if session.IsRevoked {
-		return "", time.Time{}, fmt.Errorf("session revoked")
+		return "", time.Time{}, fmt.Errorf("%w: session revoked", model.ErrInvalidCredentials)
 	}
 
 	if time.Now().After(session.ExpiresAt) {
-		return "", time.Time{}, fmt.Errorf("session expired")
+		return "", time.Time{}, fmt.Errorf("%w: session expired", model.ErrInvalidCredentials)
 	}
 
 	if session.UserEmail != claims.Email {
-		return "", time.Time{}, fmt.Errorf("invalid session")
+		return "", time.Time{}, fmt.Errorf("%w: invalid session", model.ErrInvalidCredentials)
 	}
 
 	if session.RefreshToken != refreshToken {
-		return "", time.Time{}, fmt.Errorf("invalid refresh token")
+		return "", time.Time{}, fmt.Errorf("%w: invalid refresh token", model.ErrInvalidCredentials)
 	}
 
 	accessToken, err := s.tokenGen.GenerateAccessToken(

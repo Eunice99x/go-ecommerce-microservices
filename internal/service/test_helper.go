@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/eunice99x/goMicro/internal/model"
 )
@@ -15,6 +16,8 @@ type fakeStorer struct {
 	users    []*model.User
 	session  *model.Session
 	err      error
+
+	notifications []*model.Notification
 
 	// set to fail only this call while the rest of the fake still succeeds
 	createSessionErr error
@@ -58,7 +61,32 @@ func (f *fakeStorer) ListOrdersByUser(ctx context.Context, userID int64) ([]*mod
 	return f.orders, f.err
 }
 
+func (f *fakeStorer) UpdateOrderStatus(ctx context.Context, id int64, from, to model.OrderStatus) error {
+	if f.err != nil {
+		return f.err
+	}
+
+	// behave like the db so the re-read after the update sees the new status
+	f.order.Status = to
+
+	return nil
+}
+
 func (f *fakeStorer) DeleteOrder(ctx context.Context, id int64) error {
+	return f.err
+}
+
+// notification fake funcs
+
+func (f *fakeStorer) ClaimNotifications(ctx context.Context, limit int, lease time.Duration) ([]*model.Notification, error) {
+	return f.notifications, f.err
+}
+
+func (f *fakeStorer) MarkNotificationSent(ctx context.Context, id int64) error {
+	return f.err
+}
+
+func (f *fakeStorer) MarkNotificationFailed(ctx context.Context, id int64, reason string, maxAttempts int) error {
 	return f.err
 }
 

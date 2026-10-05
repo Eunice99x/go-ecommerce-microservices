@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -56,13 +57,17 @@ func (s *Service) DeleteUser(ctx context.Context, id int64) error {
 
 func (s *Service) LoginUser(ctx context.Context, email, password string) (*LoginResult, error) {
 	user, err := s.storer.GetUser(ctx, email)
+	// same error as a wrong password so login can't be used to check which emails exist
+	if errors.Is(err, model.ErrNotFound) {
+		return nil, model.ErrInvalidCredentials
+	}
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 
 	err = auth.ComparePassword(password, user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, model.ErrInvalidCredentials
 	}
 
 	refreshToken, err := s.tokenGen.GenerateRefreshToken(

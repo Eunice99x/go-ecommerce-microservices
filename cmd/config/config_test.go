@@ -66,6 +66,18 @@ func TestLoadConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "partial grpc tls config",
+			test: func(t *testing.T) {
+				t.Setenv("SECRET_KEY", "a-secret-key-that-is-long-enough")
+				t.Setenv("GRPC_TLS_CA", "certs/ca.pem")
+
+				_, err := LoadConfig()
+
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "must be set together")
+			},
+		},
+		{
 			name: "missing db name",
 			test: func(t *testing.T) {
 				t.Setenv("SECRET_KEY", "a-secret-key-that-is-long-enough")
@@ -142,4 +154,11 @@ func TestAddr(t *testing.T) {
 	cfg := &Config{ServerPort: "3000"}
 
 	require.Equal(t, ":3000", cfg.Addr())
+}
+
+func TestGRPCTarget(t *testing.T) {
+	cfg := &Config{GRPCHost: "grpc", GRPCPort: "50051"}
+
+	require.Equal(t, "grpc:50051", cfg.GRPCTarget())
+	require.Equal(t, ":50051", cfg.GRPCAddr())
 }

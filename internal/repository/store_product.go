@@ -53,7 +53,7 @@ func (ps *PostgresStorer) GetProduct(ctx context.Context, id int64) (*model.Prod
 		id,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error getting product: %w", err)
+		return nil, fmt.Errorf("error getting product: %w", dbError(err))
 	}
 
 	return &p, nil

@@ -22,6 +22,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type OrderStatus int32
+
+const (
+	OrderStatus_ORDER_STATUS_UNSPECIFIED OrderStatus = 0
+	OrderStatus_ORDER_STATUS_PENDING     OrderStatus = 1
+	OrderStatus_ORDER_STATUS_SHIPPED     OrderStatus = 2
+	OrderStatus_ORDER_STATUS_DELIVERED   OrderStatus = 3
+)
+
+// Enum value maps for OrderStatus.
+var (
+	OrderStatus_name = map[int32]string{
+		0: "ORDER_STATUS_UNSPECIFIED",
+		1: "ORDER_STATUS_PENDING",
+		2: "ORDER_STATUS_SHIPPED",
+		3: "ORDER_STATUS_DELIVERED",
+	}
+	OrderStatus_value = map[string]int32{
+		"ORDER_STATUS_UNSPECIFIED": 0,
+		"ORDER_STATUS_PENDING":     1,
+		"ORDER_STATUS_SHIPPED":     2,
+		"ORDER_STATUS_DELIVERED":   3,
+	}
+)
+
+func (x OrderStatus) Enum() *OrderStatus {
+	p := new(OrderStatus)
+	*p = x
+	return p
+}
+
+func (x OrderStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OrderStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_grpc_pb_api_proto_enumTypes[0].Descriptor()
+}
+
+func (OrderStatus) Type() protoreflect.EnumType {
+	return &file_grpc_pb_api_proto_enumTypes[0]
+}
+
+func (x OrderStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OrderStatus.Descriptor instead.
+func (OrderStatus) EnumDescriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{0}
+}
+
 type ProductReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -493,6 +545,7 @@ type OrderRes struct {
 	UserId        int64                  `protobuf:"varint,7,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Status        OrderStatus            `protobuf:"varint,10,opt,name=status,proto3,enum=pb.OrderStatus" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -590,6 +643,65 @@ func (x *OrderRes) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *OrderRes) GetStatus() OrderStatus {
+	if x != nil {
+		return x.Status
+	}
+	return OrderStatus_ORDER_STATUS_UNSPECIFIED
+}
+
+type UpdateOrderStatusReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status        OrderStatus            `protobuf:"varint,2,opt,name=status,proto3,enum=pb.OrderStatus" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateOrderStatusReq) Reset() {
+	*x = UpdateOrderStatusReq{}
+	mi := &file_grpc_pb_api_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateOrderStatusReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateOrderStatusReq) ProtoMessage() {}
+
+func (x *UpdateOrderStatusReq) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_pb_api_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateOrderStatusReq.ProtoReflect.Descriptor instead.
+func (*UpdateOrderStatusReq) Descriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateOrderStatusReq) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpdateOrderStatusReq) GetStatus() OrderStatus {
+	if x != nil {
+		return x.Status
+	}
+	return OrderStatus_ORDER_STATUS_UNSPECIFIED
+}
+
 type ListOrderRes struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Orders        []*OrderRes            `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
@@ -599,7 +711,7 @@ type ListOrderRes struct {
 
 func (x *ListOrderRes) Reset() {
 	*x = ListOrderRes{}
-	mi := &file_grpc_pb_api_proto_msgTypes[6]
+	mi := &file_grpc_pb_api_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -611,7 +723,7 @@ func (x *ListOrderRes) String() string {
 func (*ListOrderRes) ProtoMessage() {}
 
 func (x *ListOrderRes) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[6]
+	mi := &file_grpc_pb_api_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -624,7 +736,7 @@ func (x *ListOrderRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOrderRes.ProtoReflect.Descriptor instead.
 func (*ListOrderRes) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{6}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListOrderRes) GetOrders() []*OrderRes {
@@ -647,7 +759,7 @@ type UserReq struct {
 
 func (x *UserReq) Reset() {
 	*x = UserReq{}
-	mi := &file_grpc_pb_api_proto_msgTypes[7]
+	mi := &file_grpc_pb_api_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -659,7 +771,7 @@ func (x *UserReq) String() string {
 func (*UserReq) ProtoMessage() {}
 
 func (x *UserReq) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[7]
+	mi := &file_grpc_pb_api_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -672,7 +784,7 @@ func (x *UserReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserReq.ProtoReflect.Descriptor instead.
 func (*UserReq) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{7}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UserReq) GetId() int64 {
@@ -724,7 +836,7 @@ type UserRes struct {
 
 func (x *UserRes) Reset() {
 	*x = UserRes{}
-	mi := &file_grpc_pb_api_proto_msgTypes[8]
+	mi := &file_grpc_pb_api_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -736,7 +848,7 @@ func (x *UserRes) String() string {
 func (*UserRes) ProtoMessage() {}
 
 func (x *UserRes) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[8]
+	mi := &file_grpc_pb_api_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -749,7 +861,7 @@ func (x *UserRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserRes.ProtoReflect.Descriptor instead.
 func (*UserRes) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{8}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UserRes) GetId() int64 {
@@ -803,7 +915,7 @@ type ListUserRes struct {
 
 func (x *ListUserRes) Reset() {
 	*x = ListUserRes{}
-	mi := &file_grpc_pb_api_proto_msgTypes[9]
+	mi := &file_grpc_pb_api_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -815,7 +927,7 @@ func (x *ListUserRes) String() string {
 func (*ListUserRes) ProtoMessage() {}
 
 func (x *ListUserRes) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[9]
+	mi := &file_grpc_pb_api_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -828,7 +940,7 @@ func (x *ListUserRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUserRes.ProtoReflect.Descriptor instead.
 func (*ListUserRes) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{9}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListUserRes) GetUsers() []*UserRes {
@@ -851,7 +963,7 @@ type SessionReq struct {
 
 func (x *SessionReq) Reset() {
 	*x = SessionReq{}
-	mi := &file_grpc_pb_api_proto_msgTypes[10]
+	mi := &file_grpc_pb_api_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -863,7 +975,7 @@ func (x *SessionReq) String() string {
 func (*SessionReq) ProtoMessage() {}
 
 func (x *SessionReq) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[10]
+	mi := &file_grpc_pb_api_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +988,7 @@ func (x *SessionReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionReq.ProtoReflect.Descriptor instead.
 func (*SessionReq) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{10}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SessionReq) GetId() string {
@@ -928,7 +1040,7 @@ type SessionRes struct {
 
 func (x *SessionRes) Reset() {
 	*x = SessionRes{}
-	mi := &file_grpc_pb_api_proto_msgTypes[11]
+	mi := &file_grpc_pb_api_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -940,7 +1052,7 @@ func (x *SessionRes) String() string {
 func (*SessionRes) ProtoMessage() {}
 
 func (x *SessionRes) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[11]
+	mi := &file_grpc_pb_api_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -953,7 +1065,7 @@ func (x *SessionRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionRes.ProtoReflect.Descriptor instead.
 func (*SessionRes) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{11}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SessionRes) GetId() string {
@@ -1009,7 +1121,7 @@ type LoginUserReq struct {
 
 func (x *LoginUserReq) Reset() {
 	*x = LoginUserReq{}
-	mi := &file_grpc_pb_api_proto_msgTypes[12]
+	mi := &file_grpc_pb_api_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1021,7 +1133,7 @@ func (x *LoginUserReq) String() string {
 func (*LoginUserReq) ProtoMessage() {}
 
 func (x *LoginUserReq) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[12]
+	mi := &file_grpc_pb_api_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1034,7 +1146,7 @@ func (x *LoginUserReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginUserReq.ProtoReflect.Descriptor instead.
 func (*LoginUserReq) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{12}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *LoginUserReq) GetEmail() string {
@@ -1065,7 +1177,7 @@ type LoginUserRes struct {
 
 func (x *LoginUserRes) Reset() {
 	*x = LoginUserRes{}
-	mi := &file_grpc_pb_api_proto_msgTypes[13]
+	mi := &file_grpc_pb_api_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1077,7 +1189,7 @@ func (x *LoginUserRes) String() string {
 func (*LoginUserRes) ProtoMessage() {}
 
 func (x *LoginUserRes) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[13]
+	mi := &file_grpc_pb_api_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1090,7 +1202,7 @@ func (x *LoginUserRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginUserRes.ProtoReflect.Descriptor instead.
 func (*LoginUserRes) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{13}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *LoginUserRes) GetUser() *UserRes {
@@ -1144,7 +1256,7 @@ type RenewAccessTokenReq struct {
 
 func (x *RenewAccessTokenReq) Reset() {
 	*x = RenewAccessTokenReq{}
-	mi := &file_grpc_pb_api_proto_msgTypes[14]
+	mi := &file_grpc_pb_api_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1156,7 +1268,7 @@ func (x *RenewAccessTokenReq) String() string {
 func (*RenewAccessTokenReq) ProtoMessage() {}
 
 func (x *RenewAccessTokenReq) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[14]
+	mi := &file_grpc_pb_api_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1169,7 +1281,7 @@ func (x *RenewAccessTokenReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenewAccessTokenReq.ProtoReflect.Descriptor instead.
 func (*RenewAccessTokenReq) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{14}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RenewAccessTokenReq) GetRefreshToken() string {
@@ -1189,7 +1301,7 @@ type RenewAccessTokenRes struct {
 
 func (x *RenewAccessTokenRes) Reset() {
 	*x = RenewAccessTokenRes{}
-	mi := &file_grpc_pb_api_proto_msgTypes[15]
+	mi := &file_grpc_pb_api_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1201,7 +1313,7 @@ func (x *RenewAccessTokenRes) String() string {
 func (*RenewAccessTokenRes) ProtoMessage() {}
 
 func (x *RenewAccessTokenRes) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_pb_api_proto_msgTypes[15]
+	mi := &file_grpc_pb_api_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1214,7 +1326,7 @@ func (x *RenewAccessTokenRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenewAccessTokenRes.ProtoReflect.Descriptor instead.
 func (*RenewAccessTokenRes) Descriptor() ([]byte, []int) {
-	return file_grpc_pb_api_proto_rawDescGZIP(), []int{15}
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RenewAccessTokenRes) GetAccessToken() string {
@@ -1229,6 +1341,259 @@ func (x *RenewAccessTokenRes) GetAccessTokenExpiresAt() *timestamppb.Timestamp {
 		return x.AccessTokenExpiresAt
 	}
 	return nil
+}
+
+type Notification struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderId       int64                  `protobuf:"varint,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	OrderStatus   OrderStatus            `protobuf:"varint,3,opt,name=order_status,json=orderStatus,proto3,enum=pb.OrderStatus" json:"order_status,omitempty"`
+	UserEmail     string                 `protobuf:"bytes,4,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
+	Attempts      int32                  `protobuf:"varint,5,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Notification) Reset() {
+	*x = Notification{}
+	mi := &file_grpc_pb_api_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Notification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Notification) ProtoMessage() {}
+
+func (x *Notification) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_pb_api_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Notification.ProtoReflect.Descriptor instead.
+func (*Notification) Descriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *Notification) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Notification) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *Notification) GetOrderStatus() OrderStatus {
+	if x != nil {
+		return x.OrderStatus
+	}
+	return OrderStatus_ORDER_STATUS_UNSPECIFIED
+}
+
+func (x *Notification) GetUserEmail() string {
+	if x != nil {
+		return x.UserEmail
+	}
+	return ""
+}
+
+func (x *Notification) GetAttempts() int32 {
+	if x != nil {
+		return x.Attempts
+	}
+	return 0
+}
+
+type ClaimNotificationsReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClaimNotificationsReq) Reset() {
+	*x = ClaimNotificationsReq{}
+	mi := &file_grpc_pb_api_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClaimNotificationsReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClaimNotificationsReq) ProtoMessage() {}
+
+func (x *ClaimNotificationsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_pb_api_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClaimNotificationsReq.ProtoReflect.Descriptor instead.
+func (*ClaimNotificationsReq) Descriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ClaimNotificationsReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type ClaimNotificationsRes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Notifications []*Notification        `protobuf:"bytes,1,rep,name=notifications,proto3" json:"notifications,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClaimNotificationsRes) Reset() {
+	*x = ClaimNotificationsRes{}
+	mi := &file_grpc_pb_api_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClaimNotificationsRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClaimNotificationsRes) ProtoMessage() {}
+
+func (x *ClaimNotificationsRes) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_pb_api_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClaimNotificationsRes.ProtoReflect.Descriptor instead.
+func (*ClaimNotificationsRes) Descriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ClaimNotificationsRes) GetNotifications() []*Notification {
+	if x != nil {
+		return x.Notifications
+	}
+	return nil
+}
+
+// an empty error means the notification was sent
+type CompleteNotificationReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteNotificationReq) Reset() {
+	*x = CompleteNotificationReq{}
+	mi := &file_grpc_pb_api_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteNotificationReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteNotificationReq) ProtoMessage() {}
+
+func (x *CompleteNotificationReq) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_pb_api_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteNotificationReq.ProtoReflect.Descriptor instead.
+func (*CompleteNotificationReq) Descriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CompleteNotificationReq) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *CompleteNotificationReq) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type CompleteNotificationRes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteNotificationRes) Reset() {
+	*x = CompleteNotificationRes{}
+	mi := &file_grpc_pb_api_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteNotificationRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteNotificationRes) ProtoMessage() {}
+
+func (x *CompleteNotificationRes) ProtoReflect() protoreflect.Message {
+	mi := &file_grpc_pb_api_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteNotificationRes.ProtoReflect.Descriptor instead.
+func (*CompleteNotificationRes) Descriptor() ([]byte, []int) {
+	return file_grpc_pb_api_proto_rawDescGZIP(), []int{21}
 }
 
 var File_grpc_pb_api_proto protoreflect.FileDescriptor
@@ -1284,7 +1649,7 @@ const file_grpc_pb_api_proto_rawDesc = "" +
 	"\x0eshipping_price\x18\x05 \x01(\x01R\rshippingPrice\x12\x1f\n" +
 	"\vtotal_price\x18\x06 \x01(\x01R\n" +
 	"totalPrice\x12\x17\n" +
-	"\auser_id\x18\a \x01(\x03R\x06userId\"\xda\x02\n" +
+	"\auser_id\x18\a \x01(\x03R\x06userId\"\x83\x03\n" +
 	"\bOrderRes\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12#\n" +
 	"\x05items\x18\x02 \x03(\v2\r.pb.OrderItemR\x05items\x12%\n" +
@@ -1297,7 +1662,12 @@ const file_grpc_pb_api_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"4\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12'\n" +
+	"\x06status\x18\n" +
+	" \x01(\x0e2\x0f.pb.OrderStatusR\x06status\"O\n" +
+	"\x14UpdateOrderStatusReq\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12'\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x0f.pb.OrderStatusR\x06status\"4\n" +
 	"\fListOrderRes\x12$\n" +
 	"\x06orders\x18\x01 \x03(\v2\f.pb.OrderResR\x06orders\"z\n" +
 	"\aUserReq\x12\x0e\n" +
@@ -1354,7 +1724,27 @@ const file_grpc_pb_api_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x8b\x01\n" +
 	"\x13RenewAccessTokenRes\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12Q\n" +
-	"\x17access_token_expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x14accessTokenExpiresAt2\xd0\a\n" +
+	"\x17access_token_expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x14accessTokenExpiresAt\"\xa8\x01\n" +
+	"\fNotification\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\x03R\aorderId\x122\n" +
+	"\forder_status\x18\x03 \x01(\x0e2\x0f.pb.OrderStatusR\vorderStatus\x12\x1d\n" +
+	"\n" +
+	"user_email\x18\x04 \x01(\tR\tuserEmail\x12\x1a\n" +
+	"\battempts\x18\x05 \x01(\x05R\battempts\"-\n" +
+	"\x15ClaimNotificationsReq\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"O\n" +
+	"\x15ClaimNotificationsRes\x126\n" +
+	"\rnotifications\x18\x01 \x03(\v2\x10.pb.NotificationR\rnotifications\"?\n" +
+	"\x17CompleteNotificationReq\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x19\n" +
+	"\x17CompleteNotificationRes*{\n" +
+	"\vOrderStatus\x12\x1c\n" +
+	"\x18ORDER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14ORDER_STATUS_PENDING\x10\x01\x12\x18\n" +
+	"\x14ORDER_STATUS_SHIPPED\x10\x02\x12\x1a\n" +
+	"\x16ORDER_STATUS_DELIVERED\x10\x032\xb1\t\n" +
 	"\x05Ecomm\x121\n" +
 	"\rCreateProduct\x12\x0e.pb.ProductReq\x1a\x0e.pb.ProductRes\"\x00\x12.\n" +
 	"\n" +
@@ -1365,7 +1755,8 @@ const file_grpc_pb_api_proto_rawDesc = "" +
 	"\vCreateOrder\x12\f.pb.OrderReq\x1a\f.pb.OrderRes\"\x00\x12(\n" +
 	"\bGetOrder\x12\f.pb.OrderReq\x1a\f.pb.OrderRes\"\x00\x12.\n" +
 	"\n" +
-	"ListOrders\x12\f.pb.OrderReq\x1a\x10.pb.ListOrderRes\"\x00\x12+\n" +
+	"ListOrders\x12\f.pb.OrderReq\x1a\x10.pb.ListOrderRes\"\x00\x12=\n" +
+	"\x11UpdateOrderStatus\x12\x18.pb.UpdateOrderStatusReq\x1a\f.pb.OrderRes\"\x00\x12+\n" +
 	"\vDeleteOrder\x12\f.pb.OrderReq\x1a\f.pb.OrderRes\"\x00\x12(\n" +
 	"\n" +
 	"CreateUser\x12\v.pb.UserReq\x1a\v.pb.UserRes\"\x00\x12%\n" +
@@ -1381,7 +1772,9 @@ const file_grpc_pb_api_proto_rawDesc = "" +
 	"\rRevokeSession\x12\x0e.pb.SessionReq\x1a\x0e.pb.SessionRes\"\x00\x121\n" +
 	"\rDeleteSession\x12\x0e.pb.SessionReq\x1a\x0e.pb.SessionRes\"\x00\x121\n" +
 	"\tLoginUser\x12\x10.pb.LoginUserReq\x1a\x10.pb.LoginUserRes\"\x00\x12F\n" +
-	"\x10RenewAccessToken\x12\x17.pb.RenewAccessTokenReq\x1a\x17.pb.RenewAccessTokenRes\"\x00B&Z$github.com/eunice99x/goMicro/grpc/pbb\x06proto3"
+	"\x10RenewAccessToken\x12\x17.pb.RenewAccessTokenReq\x1a\x17.pb.RenewAccessTokenRes\"\x00\x12L\n" +
+	"\x12ClaimNotifications\x12\x19.pb.ClaimNotificationsReq\x1a\x19.pb.ClaimNotificationsRes\"\x00\x12R\n" +
+	"\x14CompleteNotification\x12\x1b.pb.CompleteNotificationReq\x1a\x1b.pb.CompleteNotificationRes\"\x00B&Z$github.com/eunice99x/goMicro/grpc/pbb\x06proto3"
 
 var (
 	file_grpc_pb_api_proto_rawDescOnce sync.Once
@@ -1395,90 +1788,108 @@ func file_grpc_pb_api_proto_rawDescGZIP() []byte {
 	return file_grpc_pb_api_proto_rawDescData
 }
 
-var file_grpc_pb_api_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_grpc_pb_api_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_grpc_pb_api_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_grpc_pb_api_proto_goTypes = []any{
-	(*ProductReq)(nil),            // 0: pb.ProductReq
-	(*ProductRes)(nil),            // 1: pb.ProductRes
-	(*ListProductRes)(nil),        // 2: pb.ListProductRes
-	(*OrderItem)(nil),             // 3: pb.OrderItem
-	(*OrderReq)(nil),              // 4: pb.OrderReq
-	(*OrderRes)(nil),              // 5: pb.OrderRes
-	(*ListOrderRes)(nil),          // 6: pb.ListOrderRes
-	(*UserReq)(nil),               // 7: pb.UserReq
-	(*UserRes)(nil),               // 8: pb.UserRes
-	(*ListUserRes)(nil),           // 9: pb.ListUserRes
-	(*SessionReq)(nil),            // 10: pb.SessionReq
-	(*SessionRes)(nil),            // 11: pb.SessionRes
-	(*LoginUserReq)(nil),          // 12: pb.LoginUserReq
-	(*LoginUserRes)(nil),          // 13: pb.LoginUserRes
-	(*RenewAccessTokenReq)(nil),   // 14: pb.RenewAccessTokenReq
-	(*RenewAccessTokenRes)(nil),   // 15: pb.RenewAccessTokenRes
-	(*timestamppb.Timestamp)(nil), // 16: google.protobuf.Timestamp
+	(OrderStatus)(0),                // 0: pb.OrderStatus
+	(*ProductReq)(nil),              // 1: pb.ProductReq
+	(*ProductRes)(nil),              // 2: pb.ProductRes
+	(*ListProductRes)(nil),          // 3: pb.ListProductRes
+	(*OrderItem)(nil),               // 4: pb.OrderItem
+	(*OrderReq)(nil),                // 5: pb.OrderReq
+	(*OrderRes)(nil),                // 6: pb.OrderRes
+	(*UpdateOrderStatusReq)(nil),    // 7: pb.UpdateOrderStatusReq
+	(*ListOrderRes)(nil),            // 8: pb.ListOrderRes
+	(*UserReq)(nil),                 // 9: pb.UserReq
+	(*UserRes)(nil),                 // 10: pb.UserRes
+	(*ListUserRes)(nil),             // 11: pb.ListUserRes
+	(*SessionReq)(nil),              // 12: pb.SessionReq
+	(*SessionRes)(nil),              // 13: pb.SessionRes
+	(*LoginUserReq)(nil),            // 14: pb.LoginUserReq
+	(*LoginUserRes)(nil),            // 15: pb.LoginUserRes
+	(*RenewAccessTokenReq)(nil),     // 16: pb.RenewAccessTokenReq
+	(*RenewAccessTokenRes)(nil),     // 17: pb.RenewAccessTokenRes
+	(*Notification)(nil),            // 18: pb.Notification
+	(*ClaimNotificationsReq)(nil),   // 19: pb.ClaimNotificationsReq
+	(*ClaimNotificationsRes)(nil),   // 20: pb.ClaimNotificationsRes
+	(*CompleteNotificationReq)(nil), // 21: pb.CompleteNotificationReq
+	(*CompleteNotificationRes)(nil), // 22: pb.CompleteNotificationRes
+	(*timestamppb.Timestamp)(nil),   // 23: google.protobuf.Timestamp
 }
 var file_grpc_pb_api_proto_depIdxs = []int32{
-	16, // 0: pb.ProductRes.created_at:type_name -> google.protobuf.Timestamp
-	16, // 1: pb.ProductRes.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 2: pb.ListProductRes.products:type_name -> pb.ProductRes
-	3,  // 3: pb.OrderReq.items:type_name -> pb.OrderItem
-	3,  // 4: pb.OrderRes.items:type_name -> pb.OrderItem
-	16, // 5: pb.OrderRes.created_at:type_name -> google.protobuf.Timestamp
-	16, // 6: pb.OrderRes.updated_at:type_name -> google.protobuf.Timestamp
-	5,  // 7: pb.ListOrderRes.orders:type_name -> pb.OrderRes
-	16, // 8: pb.UserRes.created_at:type_name -> google.protobuf.Timestamp
-	16, // 9: pb.UserRes.updated_at:type_name -> google.protobuf.Timestamp
-	8,  // 10: pb.ListUserRes.users:type_name -> pb.UserRes
-	16, // 11: pb.SessionReq.expires_at:type_name -> google.protobuf.Timestamp
-	16, // 12: pb.SessionRes.created_at:type_name -> google.protobuf.Timestamp
-	16, // 13: pb.SessionRes.expires_at:type_name -> google.protobuf.Timestamp
-	8,  // 14: pb.LoginUserRes.user:type_name -> pb.UserRes
-	16, // 15: pb.LoginUserRes.access_token_expires_at:type_name -> google.protobuf.Timestamp
-	16, // 16: pb.LoginUserRes.refresh_token_expires_at:type_name -> google.protobuf.Timestamp
-	16, // 17: pb.RenewAccessTokenRes.access_token_expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 18: pb.Ecomm.CreateProduct:input_type -> pb.ProductReq
-	0,  // 19: pb.Ecomm.GetProduct:input_type -> pb.ProductReq
-	0,  // 20: pb.Ecomm.ListProducts:input_type -> pb.ProductReq
-	0,  // 21: pb.Ecomm.UpdateProduct:input_type -> pb.ProductReq
-	0,  // 22: pb.Ecomm.DeleteProduct:input_type -> pb.ProductReq
-	4,  // 23: pb.Ecomm.CreateOrder:input_type -> pb.OrderReq
-	4,  // 24: pb.Ecomm.GetOrder:input_type -> pb.OrderReq
-	4,  // 25: pb.Ecomm.ListOrders:input_type -> pb.OrderReq
-	4,  // 26: pb.Ecomm.DeleteOrder:input_type -> pb.OrderReq
-	7,  // 27: pb.Ecomm.CreateUser:input_type -> pb.UserReq
-	7,  // 28: pb.Ecomm.GetUser:input_type -> pb.UserReq
-	7,  // 29: pb.Ecomm.ListUsers:input_type -> pb.UserReq
-	7,  // 30: pb.Ecomm.UpdateUser:input_type -> pb.UserReq
-	7,  // 31: pb.Ecomm.DeleteUser:input_type -> pb.UserReq
-	10, // 32: pb.Ecomm.CreateSession:input_type -> pb.SessionReq
-	10, // 33: pb.Ecomm.GetSession:input_type -> pb.SessionReq
-	10, // 34: pb.Ecomm.RevokeSession:input_type -> pb.SessionReq
-	10, // 35: pb.Ecomm.DeleteSession:input_type -> pb.SessionReq
-	12, // 36: pb.Ecomm.LoginUser:input_type -> pb.LoginUserReq
-	14, // 37: pb.Ecomm.RenewAccessToken:input_type -> pb.RenewAccessTokenReq
-	1,  // 38: pb.Ecomm.CreateProduct:output_type -> pb.ProductRes
-	1,  // 39: pb.Ecomm.GetProduct:output_type -> pb.ProductRes
-	2,  // 40: pb.Ecomm.ListProducts:output_type -> pb.ListProductRes
-	1,  // 41: pb.Ecomm.UpdateProduct:output_type -> pb.ProductRes
-	1,  // 42: pb.Ecomm.DeleteProduct:output_type -> pb.ProductRes
-	5,  // 43: pb.Ecomm.CreateOrder:output_type -> pb.OrderRes
-	5,  // 44: pb.Ecomm.GetOrder:output_type -> pb.OrderRes
-	6,  // 45: pb.Ecomm.ListOrders:output_type -> pb.ListOrderRes
-	5,  // 46: pb.Ecomm.DeleteOrder:output_type -> pb.OrderRes
-	8,  // 47: pb.Ecomm.CreateUser:output_type -> pb.UserRes
-	8,  // 48: pb.Ecomm.GetUser:output_type -> pb.UserRes
-	9,  // 49: pb.Ecomm.ListUsers:output_type -> pb.ListUserRes
-	8,  // 50: pb.Ecomm.UpdateUser:output_type -> pb.UserRes
-	8,  // 51: pb.Ecomm.DeleteUser:output_type -> pb.UserRes
-	11, // 52: pb.Ecomm.CreateSession:output_type -> pb.SessionRes
-	11, // 53: pb.Ecomm.GetSession:output_type -> pb.SessionRes
-	11, // 54: pb.Ecomm.RevokeSession:output_type -> pb.SessionRes
-	11, // 55: pb.Ecomm.DeleteSession:output_type -> pb.SessionRes
-	13, // 56: pb.Ecomm.LoginUser:output_type -> pb.LoginUserRes
-	15, // 57: pb.Ecomm.RenewAccessToken:output_type -> pb.RenewAccessTokenRes
-	38, // [38:58] is the sub-list for method output_type
-	18, // [18:38] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	23, // 0: pb.ProductRes.created_at:type_name -> google.protobuf.Timestamp
+	23, // 1: pb.ProductRes.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 2: pb.ListProductRes.products:type_name -> pb.ProductRes
+	4,  // 3: pb.OrderReq.items:type_name -> pb.OrderItem
+	4,  // 4: pb.OrderRes.items:type_name -> pb.OrderItem
+	23, // 5: pb.OrderRes.created_at:type_name -> google.protobuf.Timestamp
+	23, // 6: pb.OrderRes.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 7: pb.OrderRes.status:type_name -> pb.OrderStatus
+	0,  // 8: pb.UpdateOrderStatusReq.status:type_name -> pb.OrderStatus
+	6,  // 9: pb.ListOrderRes.orders:type_name -> pb.OrderRes
+	23, // 10: pb.UserRes.created_at:type_name -> google.protobuf.Timestamp
+	23, // 11: pb.UserRes.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 12: pb.ListUserRes.users:type_name -> pb.UserRes
+	23, // 13: pb.SessionReq.expires_at:type_name -> google.protobuf.Timestamp
+	23, // 14: pb.SessionRes.created_at:type_name -> google.protobuf.Timestamp
+	23, // 15: pb.SessionRes.expires_at:type_name -> google.protobuf.Timestamp
+	10, // 16: pb.LoginUserRes.user:type_name -> pb.UserRes
+	23, // 17: pb.LoginUserRes.access_token_expires_at:type_name -> google.protobuf.Timestamp
+	23, // 18: pb.LoginUserRes.refresh_token_expires_at:type_name -> google.protobuf.Timestamp
+	23, // 19: pb.RenewAccessTokenRes.access_token_expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 20: pb.Notification.order_status:type_name -> pb.OrderStatus
+	18, // 21: pb.ClaimNotificationsRes.notifications:type_name -> pb.Notification
+	1,  // 22: pb.Ecomm.CreateProduct:input_type -> pb.ProductReq
+	1,  // 23: pb.Ecomm.GetProduct:input_type -> pb.ProductReq
+	1,  // 24: pb.Ecomm.ListProducts:input_type -> pb.ProductReq
+	1,  // 25: pb.Ecomm.UpdateProduct:input_type -> pb.ProductReq
+	1,  // 26: pb.Ecomm.DeleteProduct:input_type -> pb.ProductReq
+	5,  // 27: pb.Ecomm.CreateOrder:input_type -> pb.OrderReq
+	5,  // 28: pb.Ecomm.GetOrder:input_type -> pb.OrderReq
+	5,  // 29: pb.Ecomm.ListOrders:input_type -> pb.OrderReq
+	7,  // 30: pb.Ecomm.UpdateOrderStatus:input_type -> pb.UpdateOrderStatusReq
+	5,  // 31: pb.Ecomm.DeleteOrder:input_type -> pb.OrderReq
+	9,  // 32: pb.Ecomm.CreateUser:input_type -> pb.UserReq
+	9,  // 33: pb.Ecomm.GetUser:input_type -> pb.UserReq
+	9,  // 34: pb.Ecomm.ListUsers:input_type -> pb.UserReq
+	9,  // 35: pb.Ecomm.UpdateUser:input_type -> pb.UserReq
+	9,  // 36: pb.Ecomm.DeleteUser:input_type -> pb.UserReq
+	12, // 37: pb.Ecomm.CreateSession:input_type -> pb.SessionReq
+	12, // 38: pb.Ecomm.GetSession:input_type -> pb.SessionReq
+	12, // 39: pb.Ecomm.RevokeSession:input_type -> pb.SessionReq
+	12, // 40: pb.Ecomm.DeleteSession:input_type -> pb.SessionReq
+	14, // 41: pb.Ecomm.LoginUser:input_type -> pb.LoginUserReq
+	16, // 42: pb.Ecomm.RenewAccessToken:input_type -> pb.RenewAccessTokenReq
+	19, // 43: pb.Ecomm.ClaimNotifications:input_type -> pb.ClaimNotificationsReq
+	21, // 44: pb.Ecomm.CompleteNotification:input_type -> pb.CompleteNotificationReq
+	2,  // 45: pb.Ecomm.CreateProduct:output_type -> pb.ProductRes
+	2,  // 46: pb.Ecomm.GetProduct:output_type -> pb.ProductRes
+	3,  // 47: pb.Ecomm.ListProducts:output_type -> pb.ListProductRes
+	2,  // 48: pb.Ecomm.UpdateProduct:output_type -> pb.ProductRes
+	2,  // 49: pb.Ecomm.DeleteProduct:output_type -> pb.ProductRes
+	6,  // 50: pb.Ecomm.CreateOrder:output_type -> pb.OrderRes
+	6,  // 51: pb.Ecomm.GetOrder:output_type -> pb.OrderRes
+	8,  // 52: pb.Ecomm.ListOrders:output_type -> pb.ListOrderRes
+	6,  // 53: pb.Ecomm.UpdateOrderStatus:output_type -> pb.OrderRes
+	6,  // 54: pb.Ecomm.DeleteOrder:output_type -> pb.OrderRes
+	10, // 55: pb.Ecomm.CreateUser:output_type -> pb.UserRes
+	10, // 56: pb.Ecomm.GetUser:output_type -> pb.UserRes
+	11, // 57: pb.Ecomm.ListUsers:output_type -> pb.ListUserRes
+	10, // 58: pb.Ecomm.UpdateUser:output_type -> pb.UserRes
+	10, // 59: pb.Ecomm.DeleteUser:output_type -> pb.UserRes
+	13, // 60: pb.Ecomm.CreateSession:output_type -> pb.SessionRes
+	13, // 61: pb.Ecomm.GetSession:output_type -> pb.SessionRes
+	13, // 62: pb.Ecomm.RevokeSession:output_type -> pb.SessionRes
+	13, // 63: pb.Ecomm.DeleteSession:output_type -> pb.SessionRes
+	15, // 64: pb.Ecomm.LoginUser:output_type -> pb.LoginUserRes
+	17, // 65: pb.Ecomm.RenewAccessToken:output_type -> pb.RenewAccessTokenRes
+	20, // 66: pb.Ecomm.ClaimNotifications:output_type -> pb.ClaimNotificationsRes
+	22, // 67: pb.Ecomm.CompleteNotification:output_type -> pb.CompleteNotificationRes
+	45, // [45:68] is the sub-list for method output_type
+	22, // [22:45] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_grpc_pb_api_proto_init() }
@@ -1491,13 +1902,14 @@ func file_grpc_pb_api_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_grpc_pb_api_proto_rawDesc), len(file_grpc_pb_api_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   16,
+			NumEnums:      1,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_grpc_pb_api_proto_goTypes,
 		DependencyIndexes: file_grpc_pb_api_proto_depIdxs,
+		EnumInfos:         file_grpc_pb_api_proto_enumTypes,
 		MessageInfos:      file_grpc_pb_api_proto_msgTypes,
 	}.Build()
 	File_grpc_pb_api_proto = out.File

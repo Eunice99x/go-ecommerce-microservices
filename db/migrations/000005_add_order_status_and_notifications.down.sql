@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS notifications;
+
+ALTER TABLE orders DROP COLUMN IF EXISTS status;

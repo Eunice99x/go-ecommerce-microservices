@@ -60,7 +60,7 @@ func TestCreateOrder(t *testing.T) {
 				oiRows := sqlmock.NewRows([]string{"id"}).
 					AddRow(1)
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnRows(oRows)
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnRows(oRows)
 
 				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnRows(oiRows)
 
@@ -82,7 +82,7 @@ func TestCreateOrder(t *testing.T) {
 			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
 				s.ExpectBegin()
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnError(fmt.Errorf("error inserting order"))
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnError(fmt.Errorf("error inserting order"))
 
 				s.ExpectRollback()
 
@@ -100,7 +100,7 @@ func TestCreateOrder(t *testing.T) {
 
 				oRows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
-				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnRows(oRows)
+				s.ExpectQuery(`INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, created_at`).WithArgs(o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID).WillReturnRows(oRows)
 
 				s.ExpectQuery(`INSERT INTO order_items (name, quantity, image, price, product_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`).WithArgs(oi.Name, oi.Quantity, oi.Image, oi.Price, oi.ProductID, oi.OrderID).WillReturnError(fmt.Errorf("error inserting order item"))
 
@@ -438,6 +438,66 @@ func TestDeleteOrder(t *testing.T) {
 			withTestDB(t, func(db *sqlx.DB, s sqlmock.Sqlmock) {
 				n := NewPostgresStorer(db)
 				tc.test(t, n, s)
+			})
+		})
+	}
+}
+
+func TestUpdateOrderStatus(t *testing.T) {
+	updateQuery := "UPDATE orders SET status=$1, updated_at=NOW() WHERE id=$2 AND status=$3"
+	enqueueQuery := "INSERT INTO notifications (order_id, order_status) VALUES ($1, $2)"
+
+	tcs := []struct {
+		name string
+		test func(*testing.T, *PostgresStorer, sqlmock.Sqlmock)
+	}{
+		{
+			name: "success updates status and enqueues notification",
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
+				s.ExpectBegin()
+				s.ExpectExec(updateQuery).WithArgs(model.OrderShipped, 1, model.OrderPending).WillReturnResult(sqlmock.NewResult(0, 1))
+				s.ExpectExec(enqueueQuery).WithArgs(1, model.OrderShipped).WillReturnResult(sqlmock.NewResult(0, 1))
+				s.ExpectCommit()
+
+				err := ps.UpdateOrderStatus(context.Background(), 1, model.OrderPending, model.OrderShipped)
+				require.NoError(t, err)
+
+				require.NoError(t, s.ExpectationsWereMet())
+			},
+		},
+		{
+			name: "status changed concurrently",
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
+				s.ExpectBegin()
+				s.ExpectExec(updateQuery).WithArgs(model.OrderShipped, 1, model.OrderPending).WillReturnResult(sqlmock.NewResult(0, 0))
+				s.ExpectRollback()
+
+				err := ps.UpdateOrderStatus(context.Background(), 1, model.OrderPending, model.OrderShipped)
+				require.ErrorIs(t, err, model.ErrInvalidStatusTransition)
+
+				require.NoError(t, s.ExpectationsWereMet())
+			},
+		},
+		{
+			name: "failed enqueuing notification rolls back the status change",
+			test: func(t *testing.T, ps *PostgresStorer, s sqlmock.Sqlmock) {
+				s.ExpectBegin()
+				s.ExpectExec(updateQuery).WithArgs(model.OrderShipped, 1, model.OrderPending).WillReturnResult(sqlmock.NewResult(0, 1))
+				s.ExpectExec(enqueueQuery).WithArgs(1, model.OrderShipped).WillReturnError(fmt.Errorf("error inserting notification"))
+				s.ExpectRollback()
+
+				err := ps.UpdateOrderStatus(context.Background(), 1, model.OrderPending, model.OrderShipped)
+				require.Error(t, err)
+
+				require.NoError(t, s.ExpectationsWereMet())
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			withTestDB(t, func(db *sqlx.DB, s sqlmock.Sqlmock) {
+				tc.test(t, NewPostgresStorer(db), s)
 			})
 		})
 	}

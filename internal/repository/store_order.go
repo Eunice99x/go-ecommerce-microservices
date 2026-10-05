@@ -36,7 +36,7 @@ func (ps *PostgresStorer) CreateOrder(ctx context.Context, o *model.Order) (*mod
 }
 
 func createOrder(ctx context.Context, tx *sqlx.Tx, o *model.Order) (*model.Order, error) {
-	query := `INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`
+	query := `INSERT INTO orders (payment_method, tax_price, shipping_price, total_price, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, created_at`
 
 	err := tx.GetContext(ctx, o, query, o.PaymentMethod, o.TaxPrice, o.ShippingPrice, o.TotalPrice, o.UserID)
 	if err != nil {
@@ -62,7 +62,7 @@ func (ps *PostgresStorer) GetOrder(ctx context.Context, id int64) (*model.Order,
 	var o model.Order
 	err := ps.db.GetContext(ctx, &o, "SELECT * FROM orders WHERE id=$1", id)
 	if err != nil {
-		return nil, fmt.Errorf("error getting order: %w", err)
+		return nil, fmt.Errorf("error getting order: %w", dbError(err))
 	}
 
 	var items []model.OrderItem
@@ -117,7 +117,37 @@ func (ps *PostgresStorer) loadOrderItems(ctx context.Context, orders []*model.Or
 	return nil
 }
 
-// Update order status (later)
+// UpdateOrderStatus saves the status and queues the email in one transaction;
+// checking the old status in WHERE stops two admins overwriting each other
+func (ps *PostgresStorer) UpdateOrderStatus(ctx context.Context, id int64, from, to model.OrderStatus) error {
+	err := ps.execTx(ctx, func(tx *sqlx.Tx) error {
+		res, err := tx.ExecContext(ctx, "UPDATE orders SET status=$1, updated_at=NOW() WHERE id=$2 AND status=$3", to, id, from)
+		if err != nil {
+			return fmt.Errorf("error updating order status: %w", err)
+		}
+
+		n, err := res.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("error checking updated rows: %w", err)
+		}
+
+		if n == 0 {
+			return fmt.Errorf("%w: order %d is no longer %s", model.ErrInvalidStatusTransition, id, from)
+		}
+
+		_, err = tx.ExecContext(ctx, "INSERT INTO notifications (order_id, order_status) VALUES ($1, $2)", id, to)
+		if err != nil {
+			return fmt.Errorf("error enqueuing notification: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error updating order status: %w", err)
+	}
+
+	return nil
+}
 
 func (ps *PostgresStorer) DeleteOrder(ctx context.Context, id int64) error {
 	err := ps.execTx(ctx, func(tx *sqlx.Tx) error {

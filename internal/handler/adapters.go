@@ -19,6 +19,7 @@ type Services interface {
 	GetOrder(ctx context.Context, id int64) (*model.Order, error)
 	ListOrders(ctx context.Context) ([]*model.Order, error)
 	ListOrdersByUser(ctx context.Context, userID int64) ([]*model.Order, error)
+	UpdateOrderStatus(ctx context.Context, id int64, status model.OrderStatus) (*model.Order, error)
 	DeleteOrder(ctx context.Context, id int64) error
 
 	CreateUser(ctx context.Context, u *model.User) (*model.User, error)

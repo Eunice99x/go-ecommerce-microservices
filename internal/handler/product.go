@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -82,7 +81,7 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		toProductModel(req),
 	)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error creating product: %v", err), http.StatusInternalServerError)
+		writeServiceError(w, err, "product")
 		return
 	}
 
@@ -108,7 +107,7 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.service.GetProduct(r.Context(), i)
 	if err != nil {
-		http.Error(w, "error getting product", http.StatusInternalServerError)
+		writeServiceError(w, err, "product")
 		return
 	}
 
@@ -126,7 +125,7 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.ListProducts(r.Context())
 	if err != nil {
-		http.Error(w, "error listing products", http.StatusInternalServerError)
+		writeServiceError(w, err, "product")
 		return
 	}
 
@@ -163,7 +162,7 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	p, err := h.service.GetProduct(r.Context(), i)
 	if err != nil {
-		http.Error(w, "error getting product", http.StatusInternalServerError)
+		writeServiceError(w, err, "product")
 		return
 	}
 
@@ -171,7 +170,7 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := h.service.UpdateProduct(r.Context(), p)
 	if err != nil {
-		http.Error(w, "error updating product", http.StatusInternalServerError)
+		writeServiceError(w, err, "product")
 		return
 	}
 
@@ -196,7 +195,7 @@ func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeleteProduct(r.Context(), i); err != nil {
-		http.Error(w, "error deleting product", http.StatusInternalServerError)
+		writeServiceError(w, err, "product")
 		return
 	}
 

@@ -47,3 +47,17 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.13.2
+
+  docker:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [api, grpc, notifier]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build image
+        run: docker build --build-arg SERVICE=${{ matrix.service }} .

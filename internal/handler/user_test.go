@@ -622,7 +622,7 @@ func TestLoginUser(t *testing.T) {
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
-					err: fmt.Errorf("invalid credentials"),
+					err: model.ErrInvalidCredentials,
 				}
 
 				h := &Handler{
@@ -782,7 +782,7 @@ func TestRenewAccessToken(t *testing.T) {
 				rec := httptest.NewRecorder()
 
 				fakeS := fakeService{
-					err: fmt.Errorf("invalid refresh token"),
+					err: fmt.Errorf("%w: invalid refresh token", model.ErrInvalidCredentials),
 				}
 
 				h := &Handler{

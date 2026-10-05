@@ -515,3 +515,82 @@ func TestDeleteOrder(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateOrderStatus(t *testing.T) {
+	newReq := func(id, body string) *http.Request {
+		req := httptest.NewRequest(http.MethodPatch, "/orders/"+id+"/status", bytes.NewBufferString(body))
+
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", id)
+
+		return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	}
+
+	tcs := []struct {
+		name     string
+		id       string
+		body     string
+		service  *fakeService
+		wantCode int
+	}{
+		{
+			name:     "success",
+			id:       "1",
+			body:     `{"status": "shipped"}`,
+			service:  &fakeService{order: &model.Order{ID: 1, Status: model.OrderShipped}},
+			wantCode: http.StatusOK,
+		},
+		{
+			name:     "invalid order id",
+			id:       "abc",
+			body:     `{"status": "shipped"}`,
+			service:  &fakeService{},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name:     "invalid body",
+			id:       "1",
+			body:     `{`,
+			service:  &fakeService{},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name:     "unknown status",
+			id:       "1",
+			body:     `{"status": "lost"}`,
+			service:  &fakeService{},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name:     "invalid transition",
+			id:       "1",
+			body:     `{"status": "pending"}`,
+			service:  &fakeService{updateErr: fmt.Errorf("%w: shipped -> pending", model.ErrInvalidStatusTransition)},
+			wantCode: http.StatusConflict,
+		},
+		{
+			name:     "service error",
+			id:       "1",
+			body:     `{"status": "shipped"}`,
+			service:  &fakeService{updateErr: fmt.Errorf("error updating order status")},
+			wantCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			h := &Handler{service: tc.service}
+
+			h.UpdateOrderStatus(rec, newReq(tc.id, tc.body))
+
+			require.Equal(t, tc.wantCode, rec.Code)
+
+			if tc.wantCode == http.StatusOK {
+				var res dto.OrderRes
+				require.NoError(t, json.NewDecoder(rec.Body).Decode(&res))
+				require.Equal(t, "shipped", res.Status)
+			}
+		})
+	}
+}

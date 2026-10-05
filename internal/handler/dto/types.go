@@ -39,8 +39,13 @@ type OrderRes struct {
 	TaxPrice      float64        `json:"tax_price"`
 	ShippingPrice float64        `json:"shipping_price"`
 	TotalPrice    float64        `json:"total_price"`
+	Status        string         `json:"status"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     *time.Time     `json:"updated_at"`
+}
+
+type UpdateOrderStatusReq struct {
+	Status string `json:"status"`
 }
 
 type OrderItemReq struct {

@@ -1,6 +1,4 @@
-// Package mapper converts between domain models and protobuf messages.
-// Both the gRPC server and the API's gRPC client work with model types,
-// so the conversions live here instead of being duplicated on each side.
+// Package mapper converts between models and protobuf messages, used by both server and client.
 package mapper
 
 import (
@@ -108,6 +106,7 @@ func OrderToRes(o *model.Order) *pb.OrderRes {
 		ShippingPrice: o.ShippingPrice,
 		TotalPrice:    o.TotalPrice,
 		UserId:        o.UserID,
+		Status:        OrderStatusToPB(o.Status),
 		CreatedAt:     toTimestamp(o.CreatedAt),
 		UpdatedAt:     toTimestampPtr(o.UpdatedAt),
 	}
@@ -122,8 +121,36 @@ func OrderFromRes(o *pb.OrderRes) *model.Order {
 		ShippingPrice: o.GetShippingPrice(),
 		TotalPrice:    o.GetTotalPrice(),
 		UserID:        o.GetUserId(),
+		Status:        OrderStatusFromPB(o.GetStatus()),
 		CreatedAt:     fromTimestamp(o.GetCreatedAt()),
 		UpdatedAt:     fromTimestampPtr(o.GetUpdatedAt()),
+	}
+}
+
+func OrderStatusToPB(s model.OrderStatus) pb.OrderStatus {
+	switch s {
+	case model.OrderPending:
+		return pb.OrderStatus_ORDER_STATUS_PENDING
+	case model.OrderShipped:
+		return pb.OrderStatus_ORDER_STATUS_SHIPPED
+	case model.OrderDelivered:
+		return pb.OrderStatus_ORDER_STATUS_DELIVERED
+	default:
+		return pb.OrderStatus_ORDER_STATUS_UNSPECIFIED
+	}
+}
+
+// OrderStatusFromPB returns "" for UNSPECIFIED, which model.OrderStatus.Valid rejects
+func OrderStatusFromPB(s pb.OrderStatus) model.OrderStatus {
+	switch s {
+	case pb.OrderStatus_ORDER_STATUS_PENDING:
+		return model.OrderPending
+	case pb.OrderStatus_ORDER_STATUS_SHIPPED:
+		return model.OrderShipped
+	case pb.OrderStatus_ORDER_STATUS_DELIVERED:
+		return model.OrderDelivered
+	default:
+		return ""
 	}
 }
 
@@ -183,7 +210,7 @@ func UserFromReq(u *pb.UserReq) *model.User {
 	}
 }
 
-// UserToRes deliberately leaves out the password hash; it never leaves the server
+// UserToRes never includes the password hash
 func UserToRes(u *model.User) *pb.UserRes {
 	return &pb.UserRes{
 		Id:        u.ID,
@@ -250,8 +277,29 @@ func SessionFromRes(s *pb.SessionRes) *model.Session {
 	}
 }
 
-// timestamps: a zero time / nil pointer stays unset on the wire,
-// otherwise it would come back as 1970-01-01 instead of zero
+// notifications
+
+func NotificationToPB(n *model.Notification) *pb.Notification {
+	return &pb.Notification{
+		Id:          n.ID,
+		OrderId:     n.OrderID,
+		OrderStatus: OrderStatusToPB(n.OrderStatus),
+		UserEmail:   n.UserEmail,
+		Attempts:    int32(n.Attempts),
+	}
+}
+
+func NotificationFromPB(n *pb.Notification) *model.Notification {
+	return &model.Notification{
+		ID:          n.GetId(),
+		OrderID:     n.GetOrderId(),
+		OrderStatus: OrderStatusFromPB(n.GetOrderStatus()),
+		UserEmail:   n.GetUserEmail(),
+		Attempts:    int(n.GetAttempts()),
+	}
+}
+
+// timestamps: zero values stay unset, otherwise they come back as 1970-01-01
 
 func toTimestamp(t time.Time) *timestamppb.Timestamp {
 	if t.IsZero() {

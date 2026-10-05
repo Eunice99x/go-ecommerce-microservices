@@ -1,5 +1,4 @@
-// Package server exposes the service layer over gRPC. Business logic stays in
-// internal/service; this package only maps between protobuf and domain models.
+// Package server exposes internal/service over gRPC; it only maps pb <-> model.
 package server
 
 import (
@@ -61,7 +60,7 @@ func (s *Server) ListProducts(ctx context.Context, _ *pb.ProductReq) (*pb.ListPr
 func (s *Server) UpdateProduct(ctx context.Context, req *pb.ProductReq) (*pb.ProductRes, error) {
 	p := mapper.ProductFromReq(req)
 
-	// ProductReq has no updated_at, so the server stamps it
+	// ProductReq has no updated_at
 	now := time.Now()
 	p.UpdatedAt = &now
 
@@ -130,6 +129,15 @@ func (s *Server) ListOrders(ctx context.Context, req *pb.OrderReq) (*pb.ListOrde
 	return &pb.ListOrderRes{Orders: res}, nil
 }
 
+func (s *Server) UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrderStatusReq) (*pb.OrderRes, error) {
+	o, err := s.service.UpdateOrderStatus(ctx, req.GetId(), mapper.OrderStatusFromPB(req.GetStatus()))
+	if err != nil {
+		return nil, err
+	}
+
+	return mapper.OrderToRes(o), nil
+}
+
 func (s *Server) DeleteOrder(ctx context.Context, req *pb.OrderReq) (*pb.OrderRes, error) {
 	if err := s.service.DeleteOrder(ctx, req.GetId()); err != nil {
 		return nil, err
@@ -172,11 +180,11 @@ func (s *Server) ListUsers(ctx context.Context, _ *pb.UserReq) (*pb.ListUserRes,
 	return &pb.ListUserRes{Users: res}, nil
 }
 
-// UpdateUser treats an empty password as "unchanged"; the repository keeps the stored hash
+// UpdateUser: an empty password keeps the current one
 func (s *Server) UpdateUser(ctx context.Context, req *pb.UserReq) (*pb.UserRes, error) {
 	u := mapper.UserFromReq(req)
 
-	// UserReq has no updated_at, so the server stamps it
+	// UserReq has no updated_at
 	now := time.Now()
 	u.UpdatedAt = &now
 
@@ -265,4 +273,34 @@ func (s *Server) DeleteSession(ctx context.Context, req *pb.SessionReq) (*pb.Ses
 	}
 
 	return &pb.SessionRes{}, nil
+}
+
+// notifications
+
+func (s *Server) ClaimNotifications(ctx context.Context, req *pb.ClaimNotificationsReq) (*pb.ClaimNotificationsRes, error) {
+	ns, err := s.service.ClaimNotifications(ctx, int(req.GetLimit()))
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*pb.Notification, 0, len(ns))
+	for _, n := range ns {
+		res = append(res, mapper.NotificationToPB(n))
+	}
+
+	return &pb.ClaimNotificationsRes{Notifications: res}, nil
+}
+
+func (s *Server) CompleteNotification(ctx context.Context, req *pb.CompleteNotificationReq) (*pb.CompleteNotificationRes, error) {
+	var err error
+	if req.GetError() == "" {
+		err = s.service.MarkNotificationSent(ctx, req.GetId())
+	} else {
+		err = s.service.MarkNotificationFailed(ctx, req.GetId(), req.GetError())
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CompleteNotificationRes{}, nil
 }

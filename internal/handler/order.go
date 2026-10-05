@@ -56,6 +56,7 @@ func toOrderRes(o *model.Order) dto.OrderRes {
 		TaxPrice:      o.TaxPrice,
 		ShippingPrice: o.ShippingPrice,
 		TotalPrice:    o.TotalPrice,
+		Status:        string(o.Status),
 		CreatedAt:     o.CreatedAt,
 		UpdatedAt:     o.UpdatedAt,
 	}
@@ -79,7 +80,7 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	order, err := h.service.CreateOrder(r.Context(), om)
 	if err != nil {
-		http.Error(w, "error creating order", http.StatusInternalServerError)
+		writeServiceError(w, err, "order")
 		return
 	}
 
@@ -96,7 +97,7 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	lo, err := h.service.ListOrders(r.Context())
 	if err != nil {
-		http.Error(w, "error listing orders", http.StatusInternalServerError)
+		writeServiceError(w, err, "order")
 		return
 	}
 
@@ -123,7 +124,7 @@ func (h *Handler) ListMyOrders(w http.ResponseWriter, r *http.Request) {
 
 	lo, err := h.service.ListOrdersByUser(r.Context(), claims.ID)
 	if err != nil {
-		http.Error(w, "error listing orders", http.StatusInternalServerError)
+		writeServiceError(w, err, "order")
 		return
 	}
 
@@ -156,7 +157,7 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	o, err := h.service.GetOrder(r.Context(), i)
 	if err != nil {
-		http.Error(w, "cant get order by this id", http.StatusInternalServerError)
+		writeServiceError(w, err, "order")
 		return
 	}
 
@@ -170,6 +171,41 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(res); err != nil {
+		http.Error(w, "error encoding response", http.StatusInternalServerError)
+		return
+	}
+}
+
+// UpdateOrderStatus is admin only
+func (h *Handler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	i, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		http.Error(w, "error parsing id", http.StatusBadRequest)
+		return
+	}
+
+	var req dto.UpdateOrderStatusReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "error decoding request body", http.StatusBadRequest)
+		return
+	}
+
+	status := model.OrderStatus(req.Status)
+	if !status.Valid() {
+		http.Error(w, "invalid order status", http.StatusBadRequest)
+		return
+	}
+
+	o, err := h.service.UpdateOrderStatus(r.Context(), i, status)
+	if err != nil {
+		writeServiceError(w, err, "order")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(toOrderRes(o)); err != nil {
 		http.Error(w, "error encoding response", http.StatusInternalServerError)
 		return
 	}
@@ -191,7 +227,7 @@ func (h *Handler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 
 	o, err := h.service.GetOrder(r.Context(), i)
 	if err != nil {
-		http.Error(w, "cant get order by this id", http.StatusInternalServerError)
+		writeServiceError(w, err, "order")
 		return
 	}
 
@@ -202,7 +238,7 @@ func (h *Handler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 
 	err = h.service.DeleteOrder(r.Context(), i)
 	if err != nil {
-		http.Error(w, "error deleting order", http.StatusInternalServerError)
+		writeServiceError(w, err, "order")
 		return
 	}
 

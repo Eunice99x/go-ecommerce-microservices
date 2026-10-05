@@ -42,3 +42,21 @@ proto:
 
 grpc-run:
 	go run ./cmd/grpc/main.go
+
+notifier-run:
+	go run ./cmd/notifier/main.go
+
+# full stack in containers (postgres, migrations, grpc, api, notifier, mailpit)
+certs:
+	./scripts/dev-certs.sh
+
+up: certs
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+logs:
+	docker compose logs -f api grpc notifier
+
+.PHONY: go-run grpc-run notifier-run db-up db-down db-shell migrate-up migrate-down test test-race test-cover lint proto certs up down logs

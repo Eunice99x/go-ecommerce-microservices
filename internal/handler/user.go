@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -59,7 +59,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.CreateUser(r.Context(), toUserModel(req))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error creating user: %v", err), http.StatusInternalServerError)
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -89,7 +89,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.GetUser(r.Context(), email)
 	if err != nil {
-		http.Error(w, "error getting user", http.StatusInternalServerError)
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.service.ListUsers(r.Context())
 	if err != nil {
-		http.Error(w, "error listing users", http.StatusInternalServerError)
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -142,7 +142,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	u, err := h.service.GetUser(r.Context(), claims.Email)
 	if err != nil {
-		http.Error(w, "error getting user", http.StatusInternalServerError)
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -153,7 +153,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := h.service.UpdateUser(r.Context(), u)
 	if err != nil {
-		http.Error(w, "error updating user", http.StatusInternalServerError)
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -178,7 +178,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeleteUser(r.Context(), i); err != nil {
-		http.Error(w, "error deleting user", http.StatusInternalServerError)
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -194,8 +194,12 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.service.LoginUser(r.Context(), req.Email, req.Password)
-	if err != nil {
+	if errors.Is(err, model.ErrInvalidCredentials) {
 		http.Error(w, "invalid email or password", http.StatusUnauthorized)
+		return
+	}
+	if err != nil {
+		writeServiceError(w, err, "user")
 		return
 	}
 
@@ -225,7 +229,7 @@ func (h *Handler) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeleteSession(r.Context(), claims.SessionID); err != nil {
-		http.Error(w, "error deleting session", http.StatusInternalServerError)
+		writeServiceError(w, err, "session")
 		return
 	}
 
@@ -241,8 +245,12 @@ func (h *Handler) RenewAccessToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	accessToken, expiresAt, err := h.service.RenewAccessToken(r.Context(), req.RefreshToken)
-	if err != nil {
+	if errors.Is(err, model.ErrInvalidCredentials) || errors.Is(err, model.ErrNotFound) {
 		http.Error(w, "invalid refresh token", http.StatusUnauthorized)
+		return
+	}
+	if err != nil {
+		writeServiceError(w, err, "session")
 		return
 	}
 
@@ -272,7 +280,7 @@ func (h *Handler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.RevokeSession(r.Context(), id); err != nil {
-		http.Error(w, "error revoking session", http.StatusInternalServerError)
+		writeServiceError(w, err, "session")
 		return
 	}
 
@@ -289,7 +297,7 @@ func (h *Handler) ownsSession(w http.ResponseWriter, r *http.Request, id string)
 
 	session, err := h.service.GetSession(r.Context(), id)
 	if err != nil {
-		http.Error(w, "session not found", http.StatusNotFound)
+		writeServiceError(w, err, "session")
 		return false
 	}
 

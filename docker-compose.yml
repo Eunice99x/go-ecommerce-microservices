@@ -1,0 +1,110 @@
+# local dev stack: make up / make down
+name: gochi
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ecomm}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: migrate/migrate:v4.18.2
+    command:
+      - -path=/migrations
+      - -database=postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-ecomm}?sslmode=disable
+      - up
+    volumes:
+      - ./db/migrations:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  grpc:
+    build:
+      context: .
+      args:
+        SERVICE: grpc
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      GRPC_PORT: "50051"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-ecomm}
+      GRPC_TLS_CA: /certs/ca.pem
+      GRPC_TLS_CERT: /certs/grpc.pem
+      GRPC_TLS_KEY: /certs/grpc-key.pem
+    volumes:
+      - ./certs/ca.pem:/certs/ca.pem:ro
+      - ./certs/grpc.pem:/certs/grpc.pem:ro
+      - ./certs/grpc-key.pem:/certs/grpc-key.pem:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      args:
+        SERVICE: api
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      SERVER_PORT: "3000"
+      GRPC_HOST: grpc
+      GRPC_PORT: "50051"
+      GRPC_TLS_CA: /certs/ca.pem
+      GRPC_TLS_CERT: /certs/api.pem
+      GRPC_TLS_KEY: /certs/api-key.pem
+    volumes:
+      - ./certs/ca.pem:/certs/ca.pem:ro
+      - ./certs/api.pem:/certs/api.pem:ro
+      - ./certs/api-key.pem:/certs/api-key.pem:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - grpc
+    restart: unless-stopped
+
+  notifier:
+    build:
+      context: .
+      args:
+        SERVICE: notifier
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      GRPC_HOST: grpc
+      GRPC_PORT: "50051"
+      GRPC_TLS_CA: /certs/ca.pem
+      GRPC_TLS_CERT: /certs/notifier.pem
+      GRPC_TLS_KEY: /certs/notifier-key.pem
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM: shop@gochi.local
+    volumes:
+      - ./certs/ca.pem:/certs/ca.pem:ro
+      - ./certs/notifier.pem:/certs/notifier.pem:ro
+      - ./certs/notifier-key.pem:/certs/notifier-key.pem:ro
+    depends_on:
+      - grpc
+      - mailpit
+    restart: unless-stopped
+
+  # catches outgoing email; inbox at http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "8025:8025"
+
+volumes:
+  pgdata:

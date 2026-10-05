@@ -32,7 +32,7 @@ func (ps *PostgresStorer) GetSession(ctx context.Context, id string) (*model.Ses
 
 	err := ps.db.GetContext(ctx, &s, "SELECT * FROM sessions WHERE id=$1", id)
 	if err != nil {
-		return nil, fmt.Errorf("error getting session: %w", err)
+		return nil, fmt.Errorf("error getting session: %w", dbError(err))
 	}
 
 	return &s, nil

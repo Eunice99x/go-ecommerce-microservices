@@ -1,5 +1,4 @@
-// Package client implements the HTTP handler's Services interface over gRPC.
-// The API holds no business logic or DB access; it forwards to the gRPC server.
+// Package client implements the handler's Services interface by calling the gRPC server.
 package client
 
 import (
@@ -113,6 +112,15 @@ func (c *Client) listOrders(ctx context.Context, req *pb.OrderReq) ([]*model.Ord
 	return orders, nil
 }
 
+func (c *Client) UpdateOrderStatus(ctx context.Context, id int64, s model.OrderStatus) (*model.Order, error) {
+	res, err := c.client.UpdateOrderStatus(ctx, &pb.UpdateOrderStatusReq{Id: id, Status: mapper.OrderStatusToPB(s)})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapper.OrderFromRes(res), nil
+}
+
 func (c *Client) DeleteOrder(ctx context.Context, id int64) error {
 	_, err := c.client.DeleteOrder(ctx, &pb.OrderReq{Id: id})
 
@@ -214,6 +222,34 @@ func (c *Client) RevokeSession(ctx context.Context, id string) error {
 
 func (c *Client) DeleteSession(ctx context.Context, id string) error {
 	_, err := c.client.DeleteSession(ctx, &pb.SessionReq{Id: id})
+
+	return err
+}
+
+// notifications
+
+func (c *Client) ClaimNotifications(ctx context.Context, limit int) ([]*model.Notification, error) {
+	res, err := c.client.ClaimNotifications(ctx, &pb.ClaimNotificationsReq{Limit: int32(limit)})
+	if err != nil {
+		return nil, err
+	}
+
+	ns := make([]*model.Notification, 0, len(res.GetNotifications()))
+	for _, n := range res.GetNotifications() {
+		ns = append(ns, mapper.NotificationFromPB(n))
+	}
+
+	return ns, nil
+}
+
+// CompleteNotification marks it sent when sendErr is nil
+func (c *Client) CompleteNotification(ctx context.Context, id int64, sendErr error) error {
+	req := &pb.CompleteNotificationReq{Id: id}
+	if sendErr != nil {
+		req.Error = sendErr.Error()
+	}
+
+	_, err := c.client.CompleteNotification(ctx, req)
 
 	return err
 }

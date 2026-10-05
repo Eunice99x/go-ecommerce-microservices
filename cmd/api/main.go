@@ -12,11 +12,11 @@ import (
 
 	"github.com/eunice99x/goMicro/cmd/config"
 	"github.com/eunice99x/goMicro/grpc/client"
+	"github.com/eunice99x/goMicro/grpc/creds"
 	"github.com/eunice99x/goMicro/grpc/pb"
 	"github.com/eunice99x/goMicro/internal/handler"
 	"github.com/eunice99x/goMicro/internal/pkg/auth"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -33,12 +33,17 @@ func run() error {
 
 	tokenGen := auth.DefaultJWTConfig(cfg.SecretKey)
 
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	transportCreds, err := creds.Client(cfg.GRPCTLSCA, cfg.GRPCTLSCert, cfg.GRPCTLSKey)
+	if err != nil {
+		return fmt.Errorf("failed to load tls credentials: %w", err)
 	}
 
-	// the API no longer talks to Postgres; all data goes through the gRPC server
-	conn, err := grpc.NewClient(cfg.GRPCAddr(), opts...)
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(transportCreds),
+		grpc.WithUnaryInterceptor(client.ErrorInterceptor),
+	}
+
+	conn, err := grpc.NewClient(cfg.GRPCTarget(), opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create grpc client: %w", err)
 	}

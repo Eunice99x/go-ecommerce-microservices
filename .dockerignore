@@ -1,0 +1,8 @@
+.git
+.github
+.env
+certs
+coverage.out
+*.md
+Dockerfile
+docker-compose.yml

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/eunice99x/goMicro/internal/model"
@@ -12,16 +13,19 @@ func (s *Service) CreateOrder(ctx context.Context, o *model.Order) (*model.Order
 
 	for i := range o.Items {
 		product, err := s.storer.GetProduct(ctx, o.Items[i].ProductID)
+		if errors.Is(err, model.ErrNotFound) {
+			return nil, fmt.Errorf("%w: product %d does not exist", model.ErrInvalidArgument, o.Items[i].ProductID)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("error getting product %d: %w", o.Items[i].ProductID, err)
 		}
 
 		if o.Items[i].Quantity <= 0 {
-			return nil, fmt.Errorf("product quantity must be greater than 0")
+			return nil, fmt.Errorf("%w: product quantity must be greater than 0", model.ErrInvalidArgument)
 		}
 
 		if o.Items[i].Quantity > product.CountInStock {
-			return nil, fmt.Errorf("not enough stock for product %d", product.ID)
+			return nil, fmt.Errorf("%w: not enough stock for product %d", model.ErrInvalidArgument, product.ID)
 		}
 
 		o.Items[i].Name = product.Name
@@ -53,10 +57,29 @@ func (s *Service) ListOrdersByUser(ctx context.Context, userID int64) ([]*model.
 	return s.storer.ListOrdersByUser(ctx, userID)
 }
 
-// will do it later after adding noti
-// func (s *Service) UpdateOrder(ctx context.Context, p *model.Order) (*model.Order, error) {
-// 	return s.storer.UpdateOrder(ctx, p)
-// }
+// orders only move forward: pending -> shipped -> delivered
+var nextOrderStatus = map[model.OrderStatus]model.OrderStatus{
+	model.OrderPending: model.OrderShipped,
+	model.OrderShipped: model.OrderDelivered,
+}
+
+// UpdateOrderStatus advances an order and queues the customer email in the same transaction
+func (s *Service) UpdateOrderStatus(ctx context.Context, id int64, status model.OrderStatus) (*model.Order, error) {
+	o, err := s.storer.GetOrder(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("error getting order: %w", err)
+	}
+
+	if nextOrderStatus[o.Status] != status {
+		return nil, fmt.Errorf("%w: %s -> %s", model.ErrInvalidStatusTransition, o.Status, status)
+	}
+
+	if err := s.storer.UpdateOrderStatus(ctx, id, o.Status, status); err != nil {
+		return nil, err
+	}
+
+	return s.storer.GetOrder(ctx, id)
+}
 
 func (s *Service) DeleteOrder(ctx context.Context, id int64) error {
 	return s.storer.DeleteOrder(ctx, id)

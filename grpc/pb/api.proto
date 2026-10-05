@@ -36,6 +36,13 @@ message ListProductRes {
     repeated ProductRes products = 1;
 }
 
+enum OrderStatus {
+    ORDER_STATUS_UNSPECIFIED = 0;
+    ORDER_STATUS_PENDING = 1;
+    ORDER_STATUS_SHIPPED = 2;
+    ORDER_STATUS_DELIVERED = 3;
+}
+
 message OrderItem {
     int64 id = 1;
     string name = 2;
@@ -66,6 +73,12 @@ message OrderRes {
     int64 user_id = 7;
     google.protobuf.Timestamp created_at = 8;
     google.protobuf.Timestamp updated_at = 9;
+    OrderStatus status = 10;
+}
+
+message UpdateOrderStatusReq {
+    int64 id = 1;
+    OrderStatus status = 2;
 }
 
 message ListOrderRes {
@@ -134,6 +147,30 @@ message RenewAccessTokenRes {
     google.protobuf.Timestamp access_token_expires_at = 2;
 }
 
+message Notification {
+    int64 id = 1;
+    int64 order_id = 2;
+    OrderStatus order_status = 3;
+    string user_email = 4;
+    int32 attempts = 5;
+}
+
+message ClaimNotificationsReq {
+    int32 limit = 1;
+}
+
+message ClaimNotificationsRes {
+    repeated Notification notifications = 1;
+}
+
+// an empty error means the notification was sent
+message CompleteNotificationReq {
+    int64 id = 1;
+    string error = 2;
+}
+
+message CompleteNotificationRes {}
+
 service Ecomm {
     rpc CreateProduct(ProductReq) returns (ProductRes) {}
     rpc GetProduct(ProductReq) returns (ProductRes) {}
@@ -144,6 +181,7 @@ service Ecomm {
     rpc CreateOrder(OrderReq) returns (OrderRes) {}
     rpc GetOrder(OrderReq) returns (OrderRes) {}
     rpc ListOrders(OrderReq) returns (ListOrderRes) {}
+    rpc UpdateOrderStatus(UpdateOrderStatusReq) returns (OrderRes) {}
     rpc DeleteOrder(OrderReq) returns (OrderRes) {}
 
     rpc CreateUser(UserReq) returns (UserRes) {}
@@ -159,4 +197,7 @@ service Ecomm {
 
     rpc LoginUser(LoginUserReq) returns (LoginUserRes) {}
     rpc RenewAccessToken(RenewAccessTokenReq) returns (RenewAccessTokenRes) {}
+
+    rpc ClaimNotifications(ClaimNotificationsReq) returns (ClaimNotificationsRes) {}
+    rpc CompleteNotification(CompleteNotificationReq) returns (CompleteNotificationRes) {}
 }

@@ -333,3 +333,69 @@ func TestDeleteOrder(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateOrderStatus(t *testing.T) {
+	tcs := []struct {
+		name    string
+		current model.OrderStatus
+		next    model.OrderStatus
+		wantErr error
+	}{
+		{name: "pending to shipped", current: model.OrderPending, next: model.OrderShipped},
+		{name: "shipped to delivered", current: model.OrderShipped, next: model.OrderDelivered},
+		{name: "skipping a step", current: model.OrderPending, next: model.OrderDelivered, wantErr: model.ErrInvalidStatusTransition},
+		{name: "going backwards", current: model.OrderShipped, next: model.OrderPending, wantErr: model.ErrInvalidStatusTransition},
+		{name: "same status", current: model.OrderShipped, next: model.OrderShipped, wantErr: model.ErrInvalidStatusTransition},
+		{name: "already delivered", current: model.OrderDelivered, next: model.OrderShipped, wantErr: model.ErrInvalidStatusTransition},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &Service{
+				storer: &fakeStorer{order: &model.Order{ID: 1, Status: tc.current}},
+			}
+
+			got, err := s.UpdateOrderStatus(t.Context(), 1, tc.next)
+
+			if tc.wantErr != nil {
+				require.ErrorIs(t, err, tc.wantErr)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tc.next, got.Status)
+		})
+	}
+
+	t.Run("failed getting order", func(t *testing.T) {
+		s := &Service{
+			storer: &fakeStorer{err: fmt.Errorf("error getting order")},
+		}
+
+		_, err := s.UpdateOrderStatus(t.Context(), 1, model.OrderShipped)
+
+		require.Error(t, err)
+	})
+}
+
+func TestCreateOrderInvalidArgument(t *testing.T) {
+	tcs := []struct {
+		name   string
+		storer *fakeStorer
+		item   model.OrderItem
+	}{
+		{name: "unknown product", storer: &fakeStorer{err: fmt.Errorf("error getting product: %w", model.ErrNotFound)}, item: model.OrderItem{ProductID: 9, Quantity: 1}},
+		{name: "zero quantity", storer: &fakeStorer{product: &model.Product{ID: 1, CountInStock: 5}}, item: model.OrderItem{ProductID: 1, Quantity: 0}},
+		{name: "not enough stock", storer: &fakeStorer{product: &model.Product{ID: 1, CountInStock: 5}}, item: model.OrderItem{ProductID: 1, Quantity: 6}},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &Service{storer: tc.storer}
+
+			_, err := s.CreateOrder(t.Context(), &model.Order{Items: []model.OrderItem{tc.item}})
+
+			require.ErrorIs(t, err, model.ErrInvalidArgument)
+		})
+	}
+}

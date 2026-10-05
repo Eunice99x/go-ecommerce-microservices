@@ -34,7 +34,7 @@ func RegisterRoutes(handler *Handler, tokenGen *auth.JWTConfig) *chi.Mux {
 		// owner or admin, checked in the handler
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", handler.GetOrder)
-			// r.Patch("/", handler.UpdateOrder)
+			r.With(GetAdminMiddlewareFunc(tokenGen)).Patch("/status", handler.UpdateOrderStatus)
 			r.Delete("/", handler.DeleteOrder)
 		})
 	})
