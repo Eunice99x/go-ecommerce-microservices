@@ -9,23 +9,18 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/eunice99x/goMicro/cmd/config"
 	"github.com/eunice99x/goMicro/db"
+	"github.com/eunice99x/goMicro/grpc/pb"
 	"github.com/eunice99x/goMicro/internal/handler"
 	"github.com/eunice99x/goMicro/internal/pkg/auth"
 	"github.com/eunice99x/goMicro/internal/repository"
 	"github.com/eunice99x/goMicro/internal/service"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	readHeaderTimeout = 5 * time.Second
-	readTimeout       = 10 * time.Second
-	writeTimeout      = 20 * time.Second
-	idleTimeout       = 120 * time.Second
-	shutdownTimeout   = 15 * time.Second
-)
 
 func main() {
 	if err := run(); err != nil {
@@ -53,6 +48,18 @@ func run() error {
 
 	tokenGen := auth.DefaultJWTConfig(cfg.SecretKey)
 
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	conn, err := grpc.NewClient(cfg.GRPCAddr(), opts...)
+	if err != nil {
+		log.Fatalf("failed to connect to server: %v", err)
+	}
+	defer conn.Close()
+
+	client := pb.NewEcommClient(conn)
+
 	store := repository.NewPostgresStorer(database.GetDB())
 	svc := service.NewService(store, tokenGen)
 	hld := handler.NewHandler(svc)
@@ -60,10 +67,10 @@ func run() error {
 	srv := &http.Server{
 		Addr:              cfg.Addr(),
 		Handler:           handler.RegisterRoutes(hld, tokenGen),
-		ReadHeaderTimeout: readHeaderTimeout,
-		ReadTimeout:       readTimeout,
-		WriteTimeout:      writeTimeout,
-		IdleTimeout:       idleTimeout,
+		ReadHeaderTimeout: config.ReadHeaderTimeout,
+		ReadTimeout:       config.ReadTimeout,
+		WriteTimeout:      config.WriteTimeout,
+		IdleTimeout:       config.IdleTimeout,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -88,7 +95,7 @@ func run() error {
 	}
 
 	// ctx is already cancelled by the signal, so shutdown needs its own
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), config.ShutdownTimeout)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {

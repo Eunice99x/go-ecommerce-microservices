@@ -4,15 +4,26 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
 const minSecretKeySize = 32
 
+const (
+	ReadHeaderTimeout = 5 * time.Second
+	ReadTimeout       = 10 * time.Second
+	WriteTimeout      = 20 * time.Second
+	IdleTimeout       = 120 * time.Second
+	ShutdownTimeout   = 15 * time.Second
+)
+
+
 type Config struct {
 	AppEnv     string `mapstructure:"APP_ENV"`
 	ServerPort string `mapstructure:"SERVER_PORT"`
+	GRPCPort string `mapstructure: "GRPC_PORT"`
 
 	DBHost     string `mapstructure:"DB_HOST"`
 	DBPort     string `mapstructure:"DB_PORT"`
@@ -27,6 +38,7 @@ type Config struct {
 var defaults = map[string]string{
 	"APP_ENV":     "development",
 	"SERVER_PORT": "3000",
+	"GRPC_PORT":   "50051",
 	"DB_HOST":     "localhost",
 	"DB_PORT":     "5433",
 	"DB_USER":     "postgres",
@@ -92,6 +104,11 @@ func (c *Config) validate() error {
 		return fmt.Errorf("DB_HOST, DB_USER and DB_NAME are required")
 	}
 
+	
+	if c.GRPCPort == "" {
+		return fmt.Errorf("GRPC_PORT is required")
+	}
+
 	return nil
 }
 
@@ -110,4 +127,8 @@ func (c *Config) DSN() string {
 
 func (c *Config) Addr() string {
 	return ":" + c.ServerPort
+}
+
+func (c *Config) GRPCAddr() string {
+	return ":" + c.GRPCPort
 }
